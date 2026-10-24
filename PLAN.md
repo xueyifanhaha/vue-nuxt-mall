@@ -49,10 +49,10 @@ app/layouts/           default.vue（Tabbar）
 
 ## 四、开发阶段（每阶段可独立验收）
 
-1. [ ] **脚手架** ✅ 已完成（依赖、nuxt.config、app.vue）
-2. [ ] **骨架**：Tabbar 四页路由 + `layouts/default.vue` + `app.vue` 补 `NuxtLayout`
-3. [ ] **Mock 数据层**：`server/api` 各接口 + mockjs 数据（商品、分类、轮播）+ `$request` composable
-4. [ ] **首页**：轮播 + 商品列表（练 `useFetch` / `useAsyncData`）
+1. [x] **脚手架** ✅ 已完成（依赖、nuxt.config、app.vue）
+2. [x] **骨架**：Tabbar 四页路由 + `layouts/default.vue` + `app.vue` 补 `NuxtLayout`（详情/搜索/登录页隐藏 Tabbar）
+3. [x] **Mock 数据层**：`server/api` 5 个接口 + mockjs 数据 + `shared/types.ts` 共享类型 + `$request` composable（含拦截器）
+4. [x] **首页**：轮播 + 金刚区 + 推荐商品流（`useAsyncData` + `request`）
 5. [ ] **分类 + 搜索**：练动态路由参数、防抖
 6. [ ] **详情页**：SKU 选择、加入购物车（练 params 路由 + 组件通信）
 7. [ ] **购物车**：Pinia + cookie 持久化、全选/结算逻辑（练习重点）

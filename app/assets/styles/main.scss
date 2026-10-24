@@ -1,0 +1,60 @@
+// ============================================================
+// 全局设计令牌 & Vant 主题覆盖
+// 设计方向：「老字号百货」—— 墨绿主色 / 铜金点缀 / 瓷白纸感 / 衬线标题
+// ============================================================
+
+:root {
+  /* 色板 */
+  --c-pine: #17453b; /* 墨绿·主色 */
+  --c-pine-deep: #0f2f28; /* 深墨绿·导航底 */
+  --c-brass: #b98a2f; /* 铜金·点缀 */
+  --c-cinnabar: #c2452d; /* 朱砂·价格 */
+  --c-porcelain: #f6f7f4; /* 瓷白·背景 */
+  --c-ink: #22302b; /* 墨色·正文 */
+  --c-muted: #8a938e; /* 灰绿·辅助文字 */
+  --c-line: rgba(23, 69, 59, 0.14); /* 细描边 */
+
+  /* 字体 */
+  --font-serif: 'Noto Serif SC', 'Songti SC', STSong, SimSun, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+  /* Vant 主题变量 */
+  --van-primary-color: var(--c-pine);
+  --van-nav-bar-background: var(--c-pine-deep);
+  --van-nav-bar-title-text-color: #f6f7f4;
+  --van-nav-bar-title-font-size: 17px;
+  --van-nav-bar-icon-color: #f6f7f4;
+  --van-nav-bar-text-color: #f6f7f4;
+  --van-tabbar-background: #fffdf9;
+  --van-tabbar-item-active-color: var(--c-pine);
+  --van-tabbar-item-active-background: #fffdf9;
+  --van-price-color: var(--c-cinnabar);
+  --van-grid-item-content-background: transparent;
+  --van-empty-description-color: var(--c-muted);
+}
+
+html {
+  background: var(--c-porcelain);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--c-ink);
+  background: var(--c-porcelain);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 衬线标题：全站记忆点 */
+.serif-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+/* 导航栏品牌名用衬线，强化「老字号」气质 */
+.van-nav-bar__title {
+  font-family: var(--font-serif);
+  letter-spacing: 0.14em;
+}

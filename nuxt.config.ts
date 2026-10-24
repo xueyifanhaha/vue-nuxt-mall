@@ -5,7 +5,7 @@ export default defineNuxtConfig({
 
   modules: ['@pinia/nuxt'],
 
-  css: ['vant/lib/index.css'],
+  css: ['vant/lib/index.css', '~/assets/styles/main.scss'],
 
   postcss: {
     plugins: {

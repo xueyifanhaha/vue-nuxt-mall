@@ -19,28 +19,98 @@ const CATEGORY_DEFS: Category[] = [
   { id: 6, name: '家居日用' },
 ]
 
-const GOODS_ADJ = ['旗舰', '臻选', '热销', '典藏', '轻奢', '爆款', '限量', '经典', '新品', '甄选']
-const GOODS_NOUN = ['智能', '无线', '便携', '全场景', '高定', '冰鲜', '轻奢', '纳米', '全景', '超薄']
+// 分类视觉：低饱和渐变 + 品类图标（与「老字号百货」整体色系协调）
+const CAT_STYLE: Record<number, { from: string; to: string; emoji: string }> = {
+  1: { from: '#3a6b5e', to: '#1c463c', emoji: '📱' }, // 手机数码
+  2: { from: '#4a5d7e', to: '#2c3a55', emoji: '📺' }, // 家用电器
+  3: { from: '#8a5a44', to: '#5e3a2a', emoji: '👜' }, // 服饰鞋包
+  4: { from: '#a8697c', to: '#7c4356', emoji: '💄' }, // 美妆个护
+  5: { from: '#c08a3e', to: '#8f5f24', emoji: '🍎' }, // 食品生鲜
+  6: { from: '#5c7a99', to: '#3a5470', emoji: '🛋️' }, // 家居日用
+}
 
-function mockGoodsTitle(): string {
-  return `${Random.pick(GOODS_ADJ)}${Random.pick(GOODS_NOUN)}${Random.ctitle(2, 4)}`
+const GOODS_ADJ = ['旗舰', '臻选', '热销', '典藏', '轻奢', '爆款', '限量', '经典', '新品', '甄选']
+
+// 按分类生成真实感的商品名：品牌 + 品类词 + 款式
+const CAT_NAMING: Record<number, { brands: string[]; nouns: string[] }> = {
+  1: {
+    brands: ['华为', '小米', 'OPPO', 'vivo', '荣耀', '一加', '漫步者', '安克'],
+    nouns: ['旗舰手机', '无线耳机', '智能手表', '快充充电器', '蓝牙音箱', '平板电脑', '移动电源'],
+  },
+  2: {
+    brands: ['美的', '格力', '海尔', '九阳', '苏泊尔', '小熊', '戴森', '科沃斯'],
+    nouns: ['变频空调', '滚筒洗衣机', '破壁机', '空气炸锅', '电饭煲', '吸尘器', '加湿器'],
+  },
+  3: {
+    brands: ['优衣库', '太平鸟', '海澜之家', '李宁', '安踏', '波司登', '森马'],
+    nouns: ['纯棉T恤', '休闲卫衣', '直筒牛仔裤', '跑步鞋', '双肩包', '轻薄羽绒服', '衬衫'],
+  },
+  4: {
+    brands: ['珀莱雅', '薇诺娜', '百雀羚', '自然堂', '花西子', '至本', '相宜本草'],
+    nouns: ['保湿面霜', '防晒霜', '氨基酸洗面奶', '修护精华液', '丝绒口红', '补水面膜', '身体乳'],
+  },
+  5: {
+    brands: ['三只松鼠', '良品铺子', '百草味', '洽洽', '伊利', '蒙牛', '农夫山泉'],
+    nouns: ['坚果礼盒', '每日坚果', '猪肉脯', '益生菌酸奶', '纯牛奶', '脐橙', '车厘子'],
+  },
+  6: {
+    brands: ['网易严选', '洁柔', '维达', '蓝月亮', '立白', '水星家纺', '富光'],
+    nouns: ['抽纸', '洗衣液', '纯棉四件套', '收纳箱', '保温杯', '香薰蜡烛', '厨房纸巾'],
+  },
+}
+
+const GOODS_EDITION = ['经典款', '升级款', '限定款', '礼盒装', '家庭装', '便携装', '2026新款']
+
+function mockGoodsTitle(categoryId: number): string {
+  const t = CAT_NAMING[categoryId] ?? { brands: ['拾光'], nouns: ['精选好物'] }
+  return `${Random.pick(t.brands)} ${Random.pick(t.nouns)} ${Random.pick(GOODS_EDITION)}`
+}
+
+interface PlaceholderOpts {
+  from: string
+  to: string
+  emoji?: string
+  label?: string
+  corner?: string
 }
 
 // SVG 占位图：mockjs 的 dataImage 在 Nitro(Node ESM) 下依赖原生 canvas 会报错，
-// 自生成 SVG data URL 零依赖、体积小、不依赖外部图床
-function svgPlaceholder(w: number, h: number, text: string): string {
-  const bg = Random.color()
-  const fontSize = Math.max(12, Math.round(h / 6))
-  const svg
-    = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
-    + `<rect width="100%" height="100%" fill="${bg}"/>`
-    + `<text x="50%" y="50%" font-size="${fontSize}" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${text}</text>`
+// 自生成渐变 + 图标 + 纹理的 SVG data URL，零依赖、体积小、不依赖外部图床
+function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
+  const { from, to, emoji, label = '', corner = '' } = opts
+  const m = Math.min(w, h)
+  const emojiSize = Math.round(m * (emoji && label ? 0.26 : 0.3))
+  const labelSize = Math.max(13, Math.round(h * 0.07))
+  const cornerSize = Math.max(10, Math.round(h * 0.045))
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
+    + `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">`
+    + `<stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/>`
+    + `</linearGradient></defs>`
+    + `<rect width="${w}" height="${h}" fill="url(#g)"/>`
+    + `<circle cx="${w * 0.86}" cy="${h * 0.12}" r="${m * 0.38}" fill="#ffffff" opacity="0.08"/>`
+    + `<circle cx="${w * 0.08}" cy="${h * 0.96}" r="${m * 0.26}" fill="#000000" opacity="0.1"/>`
+    + `<circle cx="${w * 0.86}" cy="${h * 0.12}" r="${m * 0.2}" fill="#ffffff" opacity="0.06"/>`
+    + (emoji
+        ? `<text x="50%" y="${label ? '44%' : '50%'}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
+        : '')
+    + (label
+        ? `<text x="50%" y="72%" font-size="${labelSize}" fill="#ffffff" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${label}</text>`
+        : '')
+    + (corner
+        ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="#ffffff" opacity="0.35" text-anchor="end">${corner}</text>`
+        : '')
     + `</svg>`
+
   return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
 }
 
-function mockGoodsImage(id: number): string {
-  return svgPlaceholder(200, 200, String(id).padStart(3, '0'))
+function mockGoodsImage(id: number, categoryId: number): string {
+  const style = CAT_STYLE[categoryId] ?? { from: '#3a6b5e', to: '#1c463c', emoji: '🛍️' }
+  return svgPlaceholder(200, 200, {
+    ...style,
+    corner: String(id).padStart(3, '0'),
+  })
 }
 
 function mockPrice(): number {
@@ -64,11 +134,11 @@ function buildCatalog(): Catalog {
     const count = Random.integer(10, 14)
     for (let i = 0; i < count; i++) {
       id++
-      const title = `${cat.name} · ${mockGoodsTitle()}`
+      const title = mockGoodsTitle(cat.id)
       goods.push({
-      id,
-      title,
-      image: mockGoodsImage(id),
+        id,
+        title,
+        image: mockGoodsImage(id, cat.id),
         price: mockPrice(),
         originPrice: Random.bool() ? mockPrice() : undefined,
         sales: Random.integer(10, 99999),
@@ -97,12 +167,13 @@ function buildCatalog(): Catalog {
         })
       }
     }
+    const style = CAT_STYLE[g.categoryId] ?? { from: '#3a6b5e', to: '#1c463c', emoji: '🛍️' }
     detailMap.set(g.id, {
       ...g,
       images: [
-        svgPlaceholder(375, 375, '主图'),
-        svgPlaceholder(375, 375, '细节'),
-        svgPlaceholder(375, 375, '场景'),
+        svgPlaceholder(375, 375, { ...style, label: '主图' }),
+        svgPlaceholder(375, 375, { ...style, label: '细节' }),
+        svgPlaceholder(375, 375, { ...style, label: '场景' }),
       ],
       description: Random.cparagraph(2, 4),
       specNames: ['颜色', '版本'],
@@ -134,14 +205,19 @@ export function getHomeData() {
 
   const banners: Banner[] = Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
-    title: `${Random.ctitle(4, 6)}`,
-    image: svgPlaceholder(750, 300, `banner ${i + 1}`),
+    title: Random.ctitle(4, 6),
+    image: svgPlaceholder(750, 300, {
+      from: '#17453b',
+      to: '#0f2f28',
+      emoji: '🛍️',
+      label: `拾光百货 · 换季臻选`,
+    }),
   }))
 
   const navIcons: NavIcon[] = categories.map((c) => ({
     id: c.id,
     name: c.name,
-    image: svgPlaceholder(60, 60, c.name.slice(0, 2)),
+    image: svgPlaceholder(60, 60, CAT_STYLE[c.id] ?? { from: '#3a6b5e', to: '#1c463c', emoji: '🛍️' }),
   }))
 
   const recommend = [...goods].sort(() => Math.random() - 0.5).slice(0, 10)
