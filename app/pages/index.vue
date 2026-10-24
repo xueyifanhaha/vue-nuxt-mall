@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { NavBar, Icon, Swipe, SwipeItem, Grid, GridItem, Loading, Empty, showToast } from 'vant'
-import type { HomeData, GoodsItem } from '#shared/types'
+import { NavBar, Icon, Swipe, SwipeItem, Grid, GridItem, Loading, Empty } from 'vant'
+import type { HomeData } from '#shared/types'
 
 useSeoMeta({ title: '首页 - mall 商城' })
 
@@ -8,32 +8,8 @@ const { data, error, status } = await useAsyncData('home', () =>
   request<HomeData>('/api/home'),
 )
 
-// 收藏（本地态，收藏 store 之后再抽）
-const favoriteIds = ref(new Set<number>())
-
-function toggleFavorite(g: GoodsItem) {
-  const s = favoriteIds.value
-  if (s.has(g.id)) {
-    s.delete(g.id)
-  }
-  else {
-    s.add(g.id)
-    showToast(`已收藏「${g.title}」`)
-  }
-  favoriteIds.value = new Set(s) // 触发响应式
-}
-
-// 加入购物车（购物车 store 在后续阶段实现，先做交互占位）
-function addToCart(g: GoodsItem) {
-  showToast(`已加入购物车：${g.title}`)
-}
-
 function toSearch() {
   navigateTo('/search')
-}
-
-function formatSales(n: number): string {
-  return n >= 10000 ? `${(n / 10000).toFixed(1)}万` : String(n)
 }
 </script>
 
@@ -68,38 +44,11 @@ function formatSales(n: number): string {
         </GridItem>
       </Grid>
 
-      <!-- 推荐商品 -->
+      <!-- 推荐商品（卡片实现统一收敛到 GoodsCard 组件） -->
       <h2 class="section-title serif-title">推荐商品</h2>
       <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
-        <GridItem
-          v-for="g in data.recommend"
-          :key="g.id"
-          class="goods-card"
-          @click="navigateTo(`/product/${g.id}`)"
-        >
-          <div class="goods-media">
-            <img class="goods-img" :src="g.image" :alt="g.title" loading="lazy" />
-            <div class="goods-actions">
-              <button
-                class="action-btn"
-                :class="{ active: favoriteIds.has(g.id) }"
-                :aria-label="favoriteIds.has(g.id) ? '取消收藏' : '收藏'"
-                @click.stop="toggleFavorite(g)"
-              >
-                <Icon :name="favoriteIds.has(g.id) ? 'like' : 'like-o'" />
-              </button>
-              <button class="action-btn" aria-label="加入购物车" @click.stop="addToCart(g)">
-                <Icon name="shopping-cart-o" />
-              </button>
-            </div>
-          </div>
-          <div class="goods-info">
-            <p class="goods-title">{{ g.title }}</p>
-            <div class="goods-row">
-              <span class="goods-price"><i>¥</i>{{ g.price }}</span>
-              <span class="goods-sales">已售{{ formatSales(g.sales) }}</span>
-            </div>
-          </div>
+        <GridItem v-for="g in data.recommend" :key="g.id">
+          <GoodsCard :goods="g" />
         </GridItem>
       </Grid>
     </template>
@@ -173,96 +122,5 @@ function formatSales(n: number): string {
 
 .goods-grid {
   padding: 0 10px;
-
-  .goods-card {
-    border: 1px solid var(--c-line);
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fff;
-    cursor: pointer;
-  }
-
-  .goods-media {
-    position: relative;
-  }
-
-  .goods-img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-  }
-
-  .goods-actions {
-    position: absolute;
-    right: 6px;
-    bottom: 6px;
-    display: flex;
-    gap: 6px;
-  }
-
-  .action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--c-ink);
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 1px 4px rgba(15, 47, 40, 0.25);
-
-    &.active {
-      color: var(--c-cinnabar);
-    }
-  }
-
-  .goods-info {
-    padding: 8px 10px 10px;
-  }
-
-  .goods-title {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--c-ink);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 38px;
-  }
-
-  .goods-row {
-    margin-top: 8px;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 4px;
-  }
-
-  .goods-price {
-    font-weight: bold;
-    color: var(--c-cinnabar);
-    font-size: 16px;
-    white-space: nowrap;
-
-    i {
-      font-style: normal;
-      font-size: 12px;
-      margin-right: 1px;
-    }
-  }
-
-  .goods-sales {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--c-muted);
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
 }
 </style>
