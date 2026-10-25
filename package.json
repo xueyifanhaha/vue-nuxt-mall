@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^1.0.3",
+    "big.js": "^7.0.1",
     "mockjs": "^1.1.0",
     "nuxt": "^4.5.2",
     "pinia": "^4.1.0",
@@ -18,6 +19,7 @@
     "vant": "^4.10.2"
   },
   "devDependencies": {
+    "@types/big.js": "^7.0.0",
     "@types/mockjs": "^1.0.10",
     "postcss-px-to-viewport": "^1.1.1",
     "sass-embedded": "^1.106.1"

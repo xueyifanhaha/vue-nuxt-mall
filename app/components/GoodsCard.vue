@@ -13,10 +13,9 @@ function toggleFav() {
   if (isFav.value) {
     showToast(`已收藏「${props.goods.title}」`)
   }
-}
-
-function addToCart() {
-  showToast(`已加入购物车：${props.goods.title}`)
+  else {
+    showToast('已取消收藏')
+  }
 }
 
 function formatSales(n: number): string {
@@ -36,9 +35,6 @@ function formatSales(n: number): string {
           @click.stop="toggleFav"
         >
           <Icon :name="isFav ? 'like' : 'like-o'" />
-        </button>
-        <button class="action-btn" aria-label="加入购物车" @click.stop="addToCart">
-          <Icon name="shopping-cart-o" />
         </button>
       </div>
     </div>

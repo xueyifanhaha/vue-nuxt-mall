@@ -126,13 +126,18 @@ function extraParams(categoryId: number): { key: string, value: string }[] {
 }
 
 /** 描述文案：卖点段 + 规格段（引用真实 SKU 与价格档位）+ 保障段，替代随机乱句 */
-function buildDescription(title: string, categoryId: number, price: number, specNames: [string, string], specValues: string[]): string {
+function buildDescription(title: string, categoryId: number, price: number, specNames: string[], specValues: string[][]): string {
   const brand = brandOf(title)
   const [p1, p2, p3] = SELLING_POINTS[categoryId] ?? SELLING_POINTS[1]
   const tier = price >= 1000 ? '旗舰品质' : price >= 200 ? '进阶之选' : '高性价比之选'
+  const specDesc = specValues.length === 0
+    ? ''
+    : specValues.length > 1
+      ? `提供${specNames[0]}：${specValues[0].join('/')}，${specNames[1]}：${specValues[1].join('/')}等多种组合，满足不同场景需求。`
+      : `提供${specNames[0]}：${specValues[0].join('/')}。`
   return [
     `${p1}；${p2}；${p3}。`,
-    `${brand}出品，${tier}定位。提供${specNames[0]}：${specValues[0].join('/')}，${specNames[1]}：${specValues[1].join('/')}等多种组合，满足不同场景需求。`,
+    specDesc ? `${brand}出品，${tier}定位。${specDesc}` : `${brand}出品，${tier}定位。`,
     '支持七天无理由退换，全场包邮（偏远地区除外），赠运费险，售后无忧。',
   ].join('\n')
 }
@@ -230,18 +235,32 @@ function buildCatalog(): Catalog {
     const [nameA, nameB] = specSet.names
     const [valuesA, valuesB] = specSet.values
 
+    // 前两个商品无规格（详情页点加购直接加入，不弹规格选择），其余保持双维度
+    const noSpec = g.id <= 2
+
     const skus: Sku[] = []
     let skuId = 0
-    for (const a of valuesA) {
-      for (const b of valuesB) {
-        skuId++
-        skus.push({
-          id: skuId,
-          title: `${a} ${b}`,
-          price: Number((g.price + skuId * 50).toFixed(2)),
-          stock: Random.integer(0, 999),
-          specs: { [nameA]: a, [nameB]: b },
-        })
+    if (noSpec) {
+      skus.push({
+        id: 1,
+        title: '标准',
+        price: g.price,
+        stock: Random.integer(0, 999),
+        specs: {},
+      })
+    }
+    else {
+      for (const a of valuesA) {
+        for (const b of valuesB) {
+          skuId++
+          skus.push({
+            id: skuId,
+            title: `${a} ${b}`,
+            price: Number((g.price + skuId * 50).toFixed(2)),
+            stock: Random.integer(0, 999),
+            specs: { [nameA]: a, [nameB]: b },
+          })
+        }
       }
     }
 
@@ -253,8 +272,14 @@ function buildCatalog(): Catalog {
         svgPlaceholder(375, 375, { ...style, label: '细节' }),
         svgPlaceholder(375, 375, { ...style, label: '场景' }),
       ],
-      description: buildDescription(g.title, g.categoryId, g.price, specSet.names, specSet.values),
-      specNames: [nameA, nameB],
+      description: buildDescription(
+        g.title,
+        g.categoryId,
+        g.price,
+        noSpec ? [] : specSet.names,
+        noSpec ? [] : specSet.values,
+      ),
+      specNames: noSpec ? [] : [nameA, nameB],
       skus,
       params: [
         { key: '品牌', value: brandOf(g.title) }, // 与标题一致，不再随机品牌

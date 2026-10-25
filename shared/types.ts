@@ -70,3 +70,14 @@ export interface LoginResult {
   token: string
   user: UserInfo
 }
+
+export interface CartItem {
+  goodsId: number
+  skuId: number
+  title: string
+  image: string
+  price: number
+  specs: Record<string, string>
+  qty: number
+  checked: boolean
+}
