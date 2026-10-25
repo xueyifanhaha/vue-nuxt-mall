@@ -31,31 +31,54 @@ const page = ref(2) // 第一页已在 SSR 取走，下一页从 2 开始
 const finished = ref(!firstPage.value?.hasMore)
 const loading = ref(false)
 const loadError = ref(false)
+const seq = ref(0) // 请求序号：丢弃过期响应（快速切分类的竞态守卫）
 
-// Vant List 触底加载下一页
-async function onLoad() {
-  if (!activeId.value || finished.value) {
+// 拉取一页：手动首屏与 List 触底共用
+async function fetchPage(reset: boolean) {
+  if (!activeId.value) {
     loading.value = false
     return
   }
+  const mySeq = ++seq.value
+  loading.value = true
   try {
     loadError.value = false
     const res = await request<PageResult<GoodsItem>>(`/api/category/${activeId.value}`, {
       query: { page: page.value, pageSize: PAGE_SIZE },
     })
+    if (mySeq !== seq.value) {
+      return // 期间已切到别的分类，本次响应过期，丢弃
+    }
+    if (reset) {
+      list.value = []
+    }
     list.value.push(...res.list)
     page.value++
     finished.value = !res.hasMore
   }
   catch {
-    loadError.value = true
+    if (mySeq === seq.value) {
+      loadError.value = true
+    }
   }
   finally {
-    loading.value = false
+    if (mySeq === seq.value) {
+      loading.value = false
+    }
   }
 }
 
-// 切换左侧分类：重置列表，回到顶部，由 List 重新触发加载第一页
+// List 触底：加载下一页
+function onLoad() {
+  if (finished.value) {
+    loading.value = false
+    return
+  }
+  fetchPage(false)
+}
+
+// 切换左侧分类：重置后手动拉第一页
+// （loading 先置 true 挡住 List 的自动 check，避免依赖 List 触发时机）
 const scroller = ref<HTMLElement | null>(null)
 
 function onSelect(item: { name: string | number }) {
@@ -67,8 +90,8 @@ function onSelect(item: { name: string | number }) {
   list.value = []
   page.value = 1
   finished.value = false
-  loading.value = true // 置为加载态，List 会随即触发 onLoad
   scroller.value?.scrollTo({ top: 0 })
+  fetchPage(true)
 }
 
 const activeName = computed(() => String(activeId.value))
