@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { NavBar, Sidebar, SidebarItem, List, Empty, Grid, GridItem } from 'vant'
+import { NavBar, List, Empty, Grid, GridItem } from 'vant'
 import type { Category, GoodsItem, PageResult } from '#shared/types'
+import type { GoodsSort } from '~/components/GoodsFilterBar.vue'
 
 useSeoMeta({ title: '分类 - mall 商城' })
 
@@ -32,6 +33,7 @@ const finished = ref(!firstPage.value?.hasMore)
 const loading = ref(false)
 const loadError = ref(false)
 const seq = ref(0) // 请求序号：丢弃过期响应（快速切分类的竞态守卫）
+const sort = ref<GoodsSort>('default') // 排序：切换时重置分页重新拉首屏
 
 // 拉取一页：手动首屏与 List 触底共用
 async function fetchPage(reset: boolean) {
@@ -44,7 +46,7 @@ async function fetchPage(reset: boolean) {
   try {
     loadError.value = false
     const res = await request<PageResult<GoodsItem>>(`/api/category/${activeId.value}`, {
-      query: { page: page.value, pageSize: PAGE_SIZE },
+      query: { page: page.value, pageSize: PAGE_SIZE, sort: sort.value },
     })
     if (mySeq !== seq.value) {
       return // 期间已切到别的分类，本次响应过期，丢弃
@@ -77,12 +79,17 @@ function onLoad() {
   fetchPage(false)
 }
 
-// 切换左侧分类：重置后手动拉第一页
-// （loading 先置 true 挡住 List 的自动 check，避免依赖 List 触发时机）
-const scroller = ref<HTMLElement | null>(null)
+// 切换排序：重置后手动拉第一页（seq 竞态守卫同样覆盖快速连点的场景）
+watch(sort, () => {
+  page.value = 1
+  finished.value = false
+  window.scrollTo({ top: 0 })
+  fetchPage(true)
+})
 
-function onSelect(item: { name: string | number }) {
-  const id = Number(item.name)
+// 切换顶部 Tab：重置后手动拉第一页（loading 已在 fetchPage 置 true，
+// 会挡住 List 的自动 check，避免双请求）
+function onClickTab(id: number) {
   if (id === activeId.value) {
     return
   }
@@ -90,11 +97,9 @@ function onSelect(item: { name: string | number }) {
   list.value = []
   page.value = 1
   finished.value = false
-  scroller.value?.scrollTo({ top: 0 })
+  window.scrollTo({ top: 0 })
   fetchPage(true)
 }
-
-const activeName = computed(() => String(activeId.value))
 </script>
 
 <template>
@@ -103,80 +108,106 @@ const activeName = computed(() => String(activeId.value))
 
     <Empty v-if="error" description="加载失败，请刷新重试" />
 
-    <div v-else-if="cats" class="cat-body">
-      <!-- 左侧分类栏 -->
-      <Sidebar v-model="activeName" class="cat-side" @select="onSelect">
-        <SidebarItem
+    <template v-else-if="cats">
+      <!-- 顶部吸顶分类 Tab（自绘：Vant Tabs 的标题靠子组件 setup 注册，
+           SSR 不触发重渲染会输出空 nav，自绘保证首屏完整） -->
+      <div class="cat-tabs">
+        <button
           v-for="c in cats"
           :key="c.id"
-          :name="String(c.id)"
-          :title="c.name"
-        />
-      </Sidebar>
-
-      <!-- 右侧商品流（触底分页） -->
-      <div ref="scroller" class="cat-main">
-        <List
-          v-model:loading="loading"
-          :finished="finished"
-          :error="loadError"
-          finished-text="没有更多了"
-          error-text="加载失败，点击重试"
-          @load="onLoad"
+          class="cat-tab"
+          :class="{ active: c.id === activeId }"
+          @click="onClickTab(c.id)"
         >
-          <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
-            <GridItem v-for="g in list" :key="g.id">
-              <GoodsCard :goods="g" />
-            </GridItem>
-          </Grid>
-        </List>
-
-        <!-- 当前分类没有商品 -->
-        <Empty
-          v-if="finished && !loading && list.length === 0"
-          description="该分类暂无商品"
-        />
+          {{ c.name }}
+        </button>
       </div>
-    </div>
+
+      <!-- 排序筛选栏（吸顶叠在分类 Tab 下方） -->
+      <GoodsFilterBar v-model="sort" class="cat-filter" />
+
+      <!-- 商品流：页面级滚动 + List 触底分页 -->
+      <List
+        v-model:loading="loading"
+        :finished="finished"
+        :error="loadError"
+        finished-text="没有更多了"
+        error-text="加载失败，点击重试"
+        @load="onLoad"
+      >
+        <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
+          <GridItem v-for="g in list" :key="g.id">
+            <GoodsCard :goods="g" />
+          </GridItem>
+        </Grid>
+      </List>
+
+      <!-- 当前分类没有商品 -->
+      <Empty
+        v-if="finished && !loading && list.length === 0"
+        description="该分类暂无商品"
+      />
+    </template>
   </div>
 </template>
 
 <style scoped lang="scss">
-/* NavBar + Tabbar 之外全部给分栏（高度跟随 Vant 变量，避免魔法数字） */
-.cat-body {
+/* Tab 栏：吸顶 + 横向滚动，墨绿选中 + 铜金下划线 */
+.cat-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  height: calc(100dvh - var(--van-nav-bar-height) - var(--van-tabbar-height));
-  overflow: hidden;
+  align-items: center;
+  height: 40px; /* 固定高度，给筛选栏的 sticky 偏移用 */
+  gap: 4px;
+  overflow-x: auto;
+  padding: 0 8px;
+  background: var(--c-bg);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-/* 左栏：墨绿主题覆盖 Vant Sidebar 默认红 */
-.cat-side {
+/* 筛选栏：分类 Tab 吸顶后叠在其下方 */
+.cat-filter {
+  position: sticky;
+  top: 40px;
+  z-index: 10;
+}
+
+.cat-tab {
+  position: relative;
   flex-shrink: 0;
-  width: 88px;
+  padding: 9px 14px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: var(--c-ink);
+  cursor: pointer;
 
-  :deep(.van-sidebar-item) {
-    background: #fffdf9;
-    color: var(--c-ink);
-  }
-
-  :deep(.van-sidebar-item--selected) {
-    background: #fff;
-    color: var(--c-pine);
-    border-color: var(--c-brass); /* 选中项左侧铜金竖条 */
+  &.active {
+    color: var(--c-primary);
     font-weight: 600;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 3px;
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--c-accent);
+      transform: translateX(-50%);
+    }
   }
 }
 
-/* 右栏：内部滚动 */
-.cat-main {
-  flex: 1;
-  overflow-y: auto;
+.goods-grid {
   padding: 10px;
-  box-sizing: border-box;
-
-  /* 两列卡片与首页一致的呼吸感 */
-  .goods-grid {
-    padding: 0;
-  }
 }
 </style>

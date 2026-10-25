@@ -143,6 +143,8 @@ function buildCatalog(): Catalog {
         originPrice: Random.bool() ? mockPrice() : undefined,
         sales: Random.integer(10, 99999),
         categoryId: cat.id,
+        // 上架时间：按 id 确定性倒推（id 越大越晚上架），不用 Random 保证重启数据一致
+        createdAt: new Date(Date.UTC(2026, 9, 24) - id * 3 * 3600_000).toISOString(),
       })
     }
   }
@@ -223,4 +225,24 @@ export function getHomeData() {
   const recommend = [...goods].sort(() => Math.random() - 0.5).slice(0, 10)
 
   return { banners, navIcons, recommend }
+}
+
+// ===== 列表排序：白名单映射，用户输入的 sort 值不直接进排序逻辑 =====
+const GOODS_SORTERS: Record<string, (a: GoodsItem, b: GoodsItem) => number> = {
+  default: (a, b) => a.id - b.id, // 综合（默认按上架倒序近似人气）
+  sales: (a, b) => b.sales - a.sales, // 销量降序
+  price_asc: (a, b) => a.price - b.price,
+  price_desc: (a, b) => b.price - a.price,
+  new: (a, b) => b.createdAt.localeCompare(a.createdAt), // 上新在前
+}
+
+/** 解析并校验 sort 参数，非法值回落 default */
+export function parseGoodsSort(raw: unknown): string {
+  const key = String(raw ?? 'default')
+  return key in GOODS_SORTERS ? key : 'default'
+}
+
+/** 返回排序后的新数组（不改动入参），调用方再自行分页 */
+export function sortGoods(list: GoodsItem[], sort: unknown): GoodsItem[] {
+  return [...list].sort(GOODS_SORTERS[parseGoodsSort(sort)])
 }

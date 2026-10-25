@@ -8,6 +8,8 @@ export interface GoodsItem {
   originPrice?: number
   sales: number
   categoryId: number
+  /** 上架时间（ISO 字符串），供「上新」排序 */
+  createdAt: string
 }
 
 export interface Banner {

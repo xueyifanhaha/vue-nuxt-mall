@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { NavBar, Search, List, Empty, Grid, GridItem, Icon, showToast, cellGroupProps } from 'vant'
+import { NavBar, Search, List, Empty, Grid, GridItem, Icon, showToast } from 'vant'
 import type { Category, GoodsItem, PageResult } from '#shared/types'
+import type { GoodsSort } from '~/components/GoodsFilterBar.vue'
 
 useSeoMeta({ title: '搜索 - mall 商城' })
 
@@ -17,6 +18,7 @@ const loading = ref(false)
 const loadError = ref(false)
 const searched = ref(false) // 已执行过搜索（控制空结果 Empty）
 const seq = ref(0) // 请求序号：丢弃过期响应（防抖连续搜索的竞态守卫）
+const sort = ref<GoodsSort>('default') // 排序：切换时重置分页重新拉首屏
 
 const scroller = ref<HTMLElement | null>(null)
 
@@ -27,13 +29,12 @@ async function fetchPage(reset: boolean) {
     return
   }
   const mySeq = ++seq.value
-  console.log(mySeq, seq.value);
-  
+
   loading.value = true
   try {
     loadError.value = false
     const res = await request<PageResult<GoodsItem>>('/api/search', {
-      query: { keyword: kw, page: page.value, pageSize: PAGE_SIZE },
+      query: { keyword: kw, page: page.value, pageSize: PAGE_SIZE, sort: sort.value },
     })
     if (mySeq !== seq.value) {
       return // 期间用户又输入了新词，本次响应已过期，丢弃
@@ -66,6 +67,16 @@ function onLoad() {
   }
   fetchPage(false)
 }
+
+// 切换排序：重置后手动拉第一页（无关键词时不动作；seq 守卫覆盖快速连点）
+watch(sort, () => {
+  if (!keyword.value.trim()) {
+    return
+  }
+  page.value = 1
+  finished.value = false
+  fetchPage(true)
+})
 
 // 发起新搜索：重置状态后手动拉第一页
 // （loading 先置 true 挡住 List 的自动 check，避免双请求）
@@ -182,6 +193,8 @@ function onClickWord(w: string) {
 
     <!-- 结果区（List 观察页面滚动） -->
     <template v-else>
+      <GoodsFilterBar v-model="sort" class="result-filter" />
+
       <List
         v-model:loading="loading"
         :finished="finished"
@@ -212,7 +225,14 @@ function onClickWord(w: string) {
   position: sticky;
   top: var(--van-nav-bar-height);
   z-index: 10;
-  background: var(--c-porcelain);
+  background: var(--c-bg);
+}
+
+/* 筛选栏：吸顶叠在 NavBar + 搜索框下方（van-search 默认高 54px） */
+.result-filter {
+  position: sticky;
+  top: calc(var(--van-nav-bar-height) + 54px);
+  z-index: 10;
 }
 
 .panel {
