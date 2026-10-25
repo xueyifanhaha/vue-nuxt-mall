@@ -3,7 +3,7 @@ import { NavBar, Search, List, Empty, Grid, GridItem, Icon, showToast } from 'va
 import type { Category, GoodsItem, PageResult } from '#shared/types'
 import type { GoodsSort } from '~/components/GoodsFilterBar.vue'
 
-useSeoMeta({ title: '搜索 - mall 商城' })
+useSeoMeta({ title: '搜索 - 拾光百货' })
 
 const PAGE_SIZE = 10
 const DEBOUNCE_MS = 300

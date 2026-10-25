@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { NavBar, Cell, CellGroup, Grid, GridItem, Icon, Button, showConfirmDialog, showToast } from 'vant'
 
-useSeoMeta({ title: '我的 - mall 商城' })
+useSeoMeta({ title: '我的 - 拾光百货' })
 
 // 页面级路由守卫：未登录会被 app/middleware/auth.ts 拦去登录页并带回跳地址
 definePageMeta({ middleware: 'auth' })
@@ -10,9 +10,8 @@ definePageMeta({ middleware: 'auth' })
 const user = useUserStore()
 
 const menuGrids = [
-  { icon: 'star-o', label: '收藏的商品' },
+  { icon: 'star-o', label: '收藏' },
   { icon: 'underway-o', label: '浏览足迹' },
-  { icon: 'coupon-o', label: '优惠券' },
   { icon: 'service-o', label: '联系客服' },
 ]
 

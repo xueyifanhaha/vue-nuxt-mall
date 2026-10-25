@@ -55,9 +55,9 @@ app/layouts/           default.vue（Tabbar）
 4. [x] **首页**：轮播 + 金刚区 + 推荐商品流（`useAsyncData` + `request`）
 5. [x] **分类 + 搜索** ✅：分类页（Sidebar + List 分页 + GoodsCard 复用，首页同步组件化）；搜索页（300ms 防抖 + localStorage 搜索历史 + 请求序号竞态守卫）；追加：吸顶筛选栏（综合/销量/价格升降/上新，GoodsFilterBar 共享组件 + 接口 sort 白名单参数 + createdAt 字段）
 6. [x] **详情页** ✅：轮播 + 价格卡 + 参数/描述 + 自绘 SKU 弹层（规格组合匹配）+ 底部操作栏（加购到确认 toast，cart store 留阶段 7）
-7. [ ] **购物车**：Pinia + cookie 持久化（key 按用户隔离）、全选/结算逻辑（练习重点）；结算接登录守卫
+7. [x] **购物车** ✅：cart store（cookie `cart_${uid}` 按用户隔离 + SSR 首帧渲染 + 登录态变化自动切换）+ 购物车页三态（未登录引导/空车/列表：SwipeCell 删除 + Stepper + 全选/合计结算栏）+ 加购真实写入（详情 SKU 确认、商品卡跳详情自动弹 SKU 层）+ Tabbar 数量徽标；去结算为占位（订单流程不在本项目范围）
 8. [x] **登录 + 我的** ✅（提前于购物车，为 cart 按用户隔离提供身份）：mock 登录接口（demo/123456）+ user store（token/userInfo 双 cookie）+ auth/guest 双向守卫（SSR 302 拦截）+ 登录页（redirect 回跳）+ 我的页（登录态渲染/退出确认）
-9. [ ] **收尾**：SEO meta（`useSeoMeta`）、加载态、错误页
+9. [x] **收尾** ✅：SEO 补强（详情页动态标题/描述 + 全站品牌后缀「拾光百货」）+ `app/error.vue` 404/500 错误页 + `NuxtLoadingIndicator` 路由加载条；Vant 按需样式已尝试并回滚（Vite 8 下 dev SSR 组件解析失效 + worker OOM，预估收益 ~40KB gzip 不抵稳定性损失，待生态成熟再做）——项目主体完工 🎉
 
 ## 五、风险与注意
 

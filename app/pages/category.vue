@@ -3,7 +3,10 @@ import { NavBar, List, Empty, Grid, GridItem } from 'vant'
 import type { Category, GoodsItem, PageResult } from '#shared/types'
 import type { GoodsSort } from '~/components/GoodsFilterBar.vue'
 
-useSeoMeta({ title: '分类 - mall 商城' })
+useSeoMeta({ title: '分类 - 拾光百货' })
+
+// 页面保活：返回本页不重挂载（列表/滚动位置/已加载分页原样保留，setup 不重跑）
+definePageMeta({ keepalive: true })
 
 const PAGE_SIZE = 10
 

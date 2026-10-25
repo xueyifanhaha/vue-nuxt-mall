@@ -3,7 +3,7 @@ import { NavBar, Form, Field, Button, showToast } from 'vant'
 import { useApiError, request } from '~/composables/request'
 import type { LoginResult } from '#shared/types'
 
-useSeoMeta({ title: '登录 - mall 商城' })
+useSeoMeta({ title: '登录 - 拾光百货' })
 
 // 已登录访问登录页会被 guest middleware 跳回首页
 definePageMeta({ middleware: 'guest' })

@@ -2,7 +2,7 @@
 import { NavBar, Icon, Swipe, SwipeItem, Grid, GridItem, Loading, Empty } from 'vant'
 import type { HomeData } from '#shared/types'
 
-useSeoMeta({ title: '首页 - mall 商城' })
+useSeoMeta({ title: '首页 - 拾光百货' })
 
 const { data, error, status } = await useAsyncData('home', () =>
   request<HomeData>('/api/home'),
