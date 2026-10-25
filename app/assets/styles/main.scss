@@ -1,48 +1,53 @@
 // ============================================================
 // 全局设计令牌 & Vant 主题覆盖
-// 设计方向：「老字号百货」—— 墨绿主色 / 铜金点缀 / 瓷白纸感 / 衬线标题
+// 设计方向：「暖亮奶油风」—— 活力橘主色 / 蜜黄点缀 / 奶油白背景 / 衬线标题
 // ============================================================
 
 :root {
   /* 色板 */
-  --c-pine: #17453b; /* 墨绿·主色 */
-  --c-pine-deep: #0f2f28; /* 深墨绿·导航底 */
-  --c-brass: #b98a2f; /* 铜金·点缀 */
-  --c-cinnabar: #c2452d; /* 朱砂·价格 */
-  --c-porcelain: #f6f7f4; /* 瓷白·背景 */
-  --c-ink: #22302b; /* 墨色·正文 */
-  --c-muted: #8a938e; /* 灰绿·辅助文字 */
-  --c-line: rgba(23, 69, 59, 0.14); /* 细描边 */
+  --c-primary: #ff7a2e; /* 活力橘·主色 */
+  --c-primary-deep: #e05e0f; /* 深橘·按压/强调 */
+  --c-accent: #ffb02e; /* 蜜黄·点缀 */
+  --c-price: #f43e24; /* 亮朱红·价格 */
+  --c-bg: #fdf7ef; /* 奶油白·背景 */
+  --c-card: #ffffff; /* 纯白·卡片 */
+  --c-ink: #3a332c; /* 暖棕墨·正文 */
+  --c-muted: #ab9f8e; /* 暖灰·辅助文字 */
+  --c-line: rgba(224, 94, 15, 0.14); /* 暖色细描边 */
+
+  /* 阴影（暖色调轻阴影，替代冷灰投影） */
+  --shadow-card: 0 2px 10px rgba(224, 94, 15, 0.08);
+  --shadow-float: 0 2px 8px rgba(224, 94, 15, 0.16);
 
   /* 字体 */
   --font-serif: 'Noto Serif SC', 'Songti SC', STSong, SimSun, serif;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 
-  /* Vant 主题变量 */
-  --van-primary-color: var(--c-pine);
-  --van-nav-bar-background: var(--c-pine-deep);
-  --van-nav-bar-title-text-color: #f6f7f4;
+  /* Vant 主题变量（导航白底墨字，明亮风的关键） */
+  --van-primary-color: var(--c-primary);
+  --van-nav-bar-background: var(--c-card);
+  --van-nav-bar-title-text-color: var(--c-ink);
   --van-nav-bar-title-font-size: 17px;
-  --van-nav-bar-icon-color: #f6f7f4;
-  --van-nav-bar-text-color: #f6f7f4;
-  --van-tabbar-background: #fffdf9;
-  --van-tabbar-item-active-color: var(--c-pine);
-  --van-tabbar-item-active-background: #fffdf9;
-  --van-price-color: var(--c-cinnabar);
+  --van-nav-bar-icon-color: var(--c-ink);
+  --van-nav-bar-text-color: var(--c-ink);
+  --van-tabbar-background: var(--c-card);
+  --van-tabbar-item-active-color: var(--c-primary);
+  --van-tabbar-item-active-background: var(--c-card);
+  --van-price-color: var(--c-price);
   --van-grid-item-content-background: transparent;
   --van-empty-description-color: var(--c-muted);
 }
 
 html {
-  background: var(--c-porcelain);
+  background: var(--c-bg);
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
   color: var(--c-ink);
-  background: var(--c-porcelain);
+  background: var(--c-bg);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -53,7 +58,7 @@ body {
   letter-spacing: 0.12em;
 }
 
-/* 导航栏品牌名用衬线，强化「老字号」气质 */
+/* 导航栏品牌名用衬线 */
 .van-nav-bar__title {
   font-family: var(--font-serif);
   letter-spacing: 0.14em;

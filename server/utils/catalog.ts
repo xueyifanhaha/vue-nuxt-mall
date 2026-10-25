@@ -19,14 +19,14 @@ const CATEGORY_DEFS: Category[] = [
   { id: 6, name: '家居日用' },
 ]
 
-// 分类视觉：低饱和渐变 + 品类图标（与「老字号百货」整体色系协调）
-const CAT_STYLE: Record<number, { from: string; to: string; emoji: string }> = {
-  1: { from: '#3a6b5e', to: '#1c463c', emoji: '📱' }, // 手机数码
-  2: { from: '#4a5d7e', to: '#2c3a55', emoji: '📺' }, // 家用电器
-  3: { from: '#8a5a44', to: '#5e3a2a', emoji: '👜' }, // 服饰鞋包
-  4: { from: '#a8697c', to: '#7c4356', emoji: '💄' }, // 美妆个护
-  5: { from: '#c08a3e', to: '#8f5f24', emoji: '🍎' }, // 食品生鲜
-  6: { from: '#5c7a99', to: '#3a5470', emoji: '🛋️' }, // 家居日用
+// 分类视觉：暖亮浅调渐变 + 品类图标（与奶油白+橘橙主题协调）
+const CAT_STYLE: Record<number, { from: string; to: string; emoji: string; ink: string }> = {
+  1: { from: '#ffe3c8', to: '#ffc08c', emoji: '📱', ink: '#9a5410' }, // 手机数码
+  2: { from: '#ffeed4', to: '#ffd08e', emoji: '📺', ink: '#a06414' }, // 家用电器
+  3: { from: '#ffe0d6', to: '#ffb3a0', emoji: '👜', ink: '#a34a30' }, // 服饰鞋包
+  4: { from: '#ffe0e8', to: '#ffb6c9', emoji: '💄', ink: '#a84a66' }, // 美妆个护
+  5: { from: '#fff2cf', to: '#ffdb8f', emoji: '🍎', ink: '#9c6b12' }, // 食品生鲜
+  6: { from: '#e3f0e4', to: '#bfe0c4', emoji: '🛋️', ink: '#4a7a52' }, // 家居日用
 }
 
 const GOODS_ADJ = ['旗舰', '臻选', '热销', '典藏', '轻奢', '爆款', '限量', '经典', '新品', '甄选']
@@ -72,12 +72,14 @@ interface PlaceholderOpts {
   emoji?: string
   label?: string
   corner?: string
+  /** 文字色：浅色渐变上用深色（默认白色，适合深色底） */
+  ink?: string
 }
 
 // SVG 占位图：mockjs 的 dataImage 在 Nitro(Node ESM) 下依赖原生 canvas 会报错，
 // 自生成渐变 + 图标 + 纹理的 SVG data URL，零依赖、体积小、不依赖外部图床
 function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
-  const { from, to, emoji, label = '', corner = '' } = opts
+  const { from, to, emoji, label = '', corner = '', ink = '#ffffff' } = opts
   const m = Math.min(w, h)
   const emojiSize = Math.round(m * (emoji && label ? 0.26 : 0.3))
   const labelSize = Math.max(13, Math.round(h * 0.07))
@@ -95,10 +97,10 @@ function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
         ? `<text x="50%" y="${label ? '44%' : '50%'}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
         : '')
     + (label
-        ? `<text x="50%" y="72%" font-size="${labelSize}" fill="#ffffff" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${label}</text>`
+        ? `<text x="50%" y="72%" font-size="${labelSize}" fill="${ink}" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${label}</text>`
         : '')
     + (corner
-        ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="#ffffff" opacity="0.35" text-anchor="end">${corner}</text>`
+        ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="${ink}" opacity="0.4" text-anchor="end">${corner}</text>`
         : '')
     + `</svg>`
 
@@ -106,7 +108,7 @@ function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
 }
 
 function mockGoodsImage(id: number, categoryId: number): string {
-  const style = CAT_STYLE[categoryId] ?? { from: '#3a6b5e', to: '#1c463c', emoji: '🛍️' }
+  const style = CAT_STYLE[categoryId] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }
   return svgPlaceholder(200, 200, {
     ...style,
     corner: String(id).padStart(3, '0'),
@@ -169,7 +171,7 @@ function buildCatalog(): Catalog {
         })
       }
     }
-    const style = CAT_STYLE[g.categoryId] ?? { from: '#3a6b5e', to: '#1c463c', emoji: '🛍️' }
+    const style = CAT_STYLE[g.categoryId] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }
     detailMap.set(g.id, {
       ...g,
       images: [
@@ -209,17 +211,17 @@ export function getHomeData() {
     id: i + 1,
     title: Random.ctitle(4, 6),
     image: svgPlaceholder(750, 300, {
-      from: '#17453b',
-      to: '#0f2f28',
+      from: '#ffb35c',
+      to: '#ff7a2e', /* 暖橘渐变主视觉，白字仍清晰 */
       emoji: '🛍️',
-      label: `拾光百货 · 换季臻选`,
+      label: `拾光百货 · 好物焕新`,
     }),
   }))
 
   const navIcons: NavIcon[] = categories.map((c) => ({
     id: c.id,
     name: c.name,
-    image: svgPlaceholder(60, 60, CAT_STYLE[c.id] ?? { from: '#3a6b5e', to: '#1c463c', emoji: '🛍️' }),
+    image: svgPlaceholder(60, 60, CAT_STYLE[c.id] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }),
   }))
 
   const recommend = [...goods].sort(() => Math.random() - 0.5).slice(0, 10)

@@ -92,10 +92,10 @@ function formatSales(n: number): string {
   color: var(--c-ink);
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(15, 47, 40, 0.25);
+  box-shadow: var(--shadow-float);
 
   &.active {
-    color: var(--c-cinnabar);
+    color: var(--c-price);
   }
 }
 
@@ -125,7 +125,7 @@ function formatSales(n: number): string {
 
 .goods-price {
   font-weight: bold;
-  color: var(--c-cinnabar);
+  color: var(--c-price);
   font-size: 16px;
   white-space: nowrap;
 

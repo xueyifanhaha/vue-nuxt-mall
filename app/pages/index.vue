@@ -70,7 +70,7 @@ function toSearch() {
   overflow: hidden;
 
   :deep(.van-swipe__indicator--active) {
-    background-color: var(--c-brass);
+    background-color: var(--c-accent);
   }
 
   .banner-img {
@@ -115,7 +115,7 @@ function toSearch() {
     content: '';
     width: 5px;
     height: 5px;
-    background: var(--c-brass);
+    background: var(--c-accent);
     transform: rotate(45deg);
   }
 }
