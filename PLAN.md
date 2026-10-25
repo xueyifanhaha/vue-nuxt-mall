@@ -54,7 +54,7 @@ app/layouts/           default.vue（Tabbar）
 3. [x] **Mock 数据层**：`server/api` 5 个接口 + mockjs 数据 + `shared/types.ts` 共享类型 + `$request` composable（含拦截器）
 4. [x] **首页**：轮播 + 金刚区 + 推荐商品流（`useAsyncData` + `request`）
 5. [x] **分类 + 搜索** ✅：分类页（Sidebar + List 分页 + GoodsCard 复用，首页同步组件化）；搜索页（300ms 防抖 + localStorage 搜索历史 + 请求序号竞态守卫）；追加：吸顶筛选栏（综合/销量/价格升降/上新，GoodsFilterBar 共享组件 + 接口 sort 白名单参数 + createdAt 字段）
-6. [ ] **详情页**：SKU 选择、加入购物车（练 params 路由 + 组件通信）
+6. [x] **详情页** ✅：轮播 + 价格卡 + 参数/描述 + 自绘 SKU 弹层（规格组合匹配）+ 底部操作栏（加购到确认 toast，cart store 留阶段 7）
 7. [ ] **购物车**：Pinia + cookie 持久化、全选/结算逻辑（练习重点）
 8. [ ] **登录 + 我的**：cookie 存 token、路由中间件守卫（练 Nuxt middleware）
 9. [ ] **收尾**：SEO meta（`useSeoMeta`）、加载态、错误页
