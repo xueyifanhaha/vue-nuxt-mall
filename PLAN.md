@@ -55,8 +55,8 @@ app/layouts/           default.vue（Tabbar）
 4. [x] **首页**：轮播 + 金刚区 + 推荐商品流（`useAsyncData` + `request`）
 5. [x] **分类 + 搜索** ✅：分类页（Sidebar + List 分页 + GoodsCard 复用，首页同步组件化）；搜索页（300ms 防抖 + localStorage 搜索历史 + 请求序号竞态守卫）；追加：吸顶筛选栏（综合/销量/价格升降/上新，GoodsFilterBar 共享组件 + 接口 sort 白名单参数 + createdAt 字段）
 6. [x] **详情页** ✅：轮播 + 价格卡 + 参数/描述 + 自绘 SKU 弹层（规格组合匹配）+ 底部操作栏（加购到确认 toast，cart store 留阶段 7）
-7. [ ] **购物车**：Pinia + cookie 持久化、全选/结算逻辑（练习重点）
-8. [ ] **登录 + 我的**：cookie 存 token、路由中间件守卫（练 Nuxt middleware）
+7. [ ] **购物车**：Pinia + cookie 持久化（key 按用户隔离）、全选/结算逻辑（练习重点）；结算接登录守卫
+8. [x] **登录 + 我的** ✅（提前于购物车，为 cart 按用户隔离提供身份）：mock 登录接口（demo/123456）+ user store（token/userInfo 双 cookie）+ auth/guest 双向守卫（SSR 302 拦截）+ 登录页（redirect 回跳）+ 我的页（登录态渲染/退出确认）
 9. [ ] **收尾**：SEO meta（`useSeoMeta`）、加载态、错误页
 
 ## 五、风险与注意

@@ -58,3 +58,15 @@ export interface ProductDetail extends GoodsItem {
   skus: Sku[]
   params: { key: string; value: string }[]
 }
+
+export interface UserInfo {
+  id: number
+  username: string
+  nickname: string
+  avatar: string
+}
+
+export interface LoginResult {
+  token: string
+  user: UserInfo
+}
