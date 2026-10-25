@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { NavBar, Swipe, SwipeItem, Icon, Empty, showToast } from 'vant'
+import { NavBar, Swipe, SwipeItem, Icon, Empty, showToast, showConfirmDialog } from 'vant'
 import type { ProductDetail, Sku } from '#shared/types'
-
-useSeoMeta({ title: '商品详情 - mall 商城' })
 
 const route = useRoute()
 const id = Number(route.params.id)
 
 // SSR 取详情：key 带上商品 id——固定 key 会在不同商品间复用缓存串数据
-const { data: detail, error } = await useAsyncData(`product-${id}`, () =>
-  request<ProductDetail>(`/api/product/${id}`),
+const { data: detail, error } = await useAsyncData(
+  `product-${id}`,
+  () => request<ProductDetail>(`/api/product/${id}`),
+  // 接通 payload 缓存：客户端导航回访同 id 直接命中，0 请求
+  // （默认 getCachedData 只在水合阶段读 payload；商品数据静态，适合常驻缓存）
+  { getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] },
 )
+
+// SEO：详情页用商品真实标题/描述（getter 响应式，数据到位后覆盖兜底）
+// 注意：必须放在 detail 声明之后——unhead 注册时会立即求值 getter，写在前面会撞 TDZ
+useSeoMeta({
+  title: () => (detail.value ? `${detail.value.title} - 拾光百货` : '商品详情 - 拾光百货'),
+  description: () => detail.value?.description.slice(0, 80) ?? '拾光百货好物精选',
+  ogTitle: () => detail.value?.title,
+  ogDescription: () => detail.value?.description.slice(0, 80),
+})
 
 // 接口 404（createError）→ 交给 Nuxt 错误页
 if (error.value || !detail.value) {
@@ -23,6 +34,13 @@ const selected = ref<Record<string, string>>(
   Object.fromEntries(detail.value.specNames.map((n) => [n, ''])),
 )
 const skuOpen = ref(false)
+
+// 商品卡跳转带 ?openSku=1 → 进入详情自动弹 SKU 层（无规格商品没有可选项，不弹）
+onMounted(() => {
+  if (route.query.openSku && detail.value.specNames.length) {
+    skuOpen.value = true
+  }
+})
 
 // 已选组合 → 命中 SKU（specs 对象全等比对）
 const matchedSku = computed<Sku | null>(() => {
@@ -52,13 +70,38 @@ function toggleFav() {
   }
 }
 
-// 加购入口：未选全规格 → 弹 SKU 层；选全 → 确认（真实 cart store 留阶段 7）
-function onAddCart() {
+// 加购入口：未登录 → 引导登录带回跳；未选全规格 → 弹 SKU 层；选全 → 写入 cart store
+const user = useUserStore()
+const cart = useCartStore()
+
+async function onAddCart() {
+  if (!user.isLogged) {
+    try {
+      await showConfirmDialog({ title: '加入购物车', message: '登录后才能加入购物车，现在去登录？' })
+    }
+    catch {
+      return // 取消
+    }
+    navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+    return
+  }
   if (!allSpecsPicked.value) {
     skuOpen.value = true
     return
   }
-  showToast(`已加入购物车：${matchedSku.value!.title}`)
+  const sku = matchedSku.value!
+  cart.add({
+    goodsId: id,
+    skuId: sku.id,
+    title: detail.value!.title,
+    image: detail.value!.image, // 用列表小图：轮播大图是 375 SVG base64，会撑爆 4KB cookie
+    price: sku.price,
+    specs: { ...sku.specs },
+  })
+  skuOpen.value = false
+  showToast('已加入购物车')
+  // 选中态归位：否则下次点「加入购物车」因 allSpecsPicked 仍为真，静默复用上次 SKU 再加一件
+  selected.value = Object.fromEntries(detail.value!.specNames.map((n) => [n, '']))
 }
 
 function onBuy() {
@@ -92,8 +135,8 @@ function formatSales(n: number): string {
         <h1 class="title">{{ detail.title }}</h1>
       </section>
 
-      <!-- 规格入口（未选全时展示提示） -->
-      <section class="info-card spec-entry" @click="skuOpen = true">
+      <!-- 规格入口（未选全时展示提示；无规格商品不渲染） -->
+      <section v-if="detail.specNames.length" class="info-card spec-entry" @click="skuOpen = true">
         <span class="spec-label">选择</span>
         <span class="spec-value">
           {{
@@ -133,14 +176,9 @@ function formatSales(n: number): string {
 
       <!-- 底部操作栏 -->
       <div class="bottom-bar">
-        <button
-          class="bar-icon"
-          :class="{ active: isFav }"
-          aria-label="收藏"
-          @click="toggleFav"
-        >
+        <button class="bar-fav" :class="{ active: isFav }" aria-label="收藏" @click="toggleFav">
           <Icon :name="isFav ? 'like' : 'like-o'" />
-          <span>收藏</span>
+          <span>{{ isFav ? '已收藏' : '收藏' }}</span>
         </button>
         <button class="bar-btn cart" @click="onAddCart">加入购物车</button>
         <button class="bar-btn buy" @click="onBuy">立即购买</button>
@@ -292,18 +330,26 @@ function formatSales(n: number): string {
   box-shadow: 0 -2px 10px rgba(224, 94, 15, 0.08);
 }
 
-.bar-icon {
+/* 收藏钮：与右侧胶囊大按钮等高，描边透明底承载选中态 */
+.bar-fav {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  border: none;
-  background: none;
-  font-size: 11px;
+  gap: 4px;
+  padding: 0 16px;
+  height: 40px;
+  border: 1px solid var(--c-line);
+  border-radius: 20px;
+  background: transparent;
+  font-size: 13px;
   color: var(--c-ink);
   cursor: pointer;
 
+  :deep(.van-icon) {
+    font-size: 17px;
+  }
+
   &.active {
+    border-color: var(--c-price);
     color: var(--c-price);
   }
 }
