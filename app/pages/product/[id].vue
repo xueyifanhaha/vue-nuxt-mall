@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NavBar, Swipe, SwipeItem, Icon, Empty } from 'vant'
+import { NavBar, Swipe, SwipeItem, Icon, Empty, showToast } from 'vant'
 import type { ProductDetail, Sku } from '#shared/types'
 
 useSeoMeta({ title: '商品详情 - mall 商城' })
@@ -274,6 +274,7 @@ function formatSales(n: number): string {
   font-size: 14px;
   line-height: 1.7;
   color: var(--c-ink);
+  white-space: pre-line; /* 数据端按 \n 分段 */
 }
 
 /* 底部操作栏：fixed + 安全区适配 */

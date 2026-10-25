@@ -66,6 +66,77 @@ function mockGoodsTitle(categoryId: number): string {
   return `${Random.pick(t.brands)} ${Random.pick(t.nouns)} ${Random.pick(GOODS_EDITION)}`
 }
 
+// ===== 详情数据真实化：让 mock 数据「互洽」而不是随机乱填 =====
+
+/** 品牌从标题提取：标题规则 = 品牌 + 品类词 + 款式，首词即品牌，永远和标题一致 */
+function brandOf(title: string): string {
+  return title.split(' ')[0] || '拾光'
+}
+
+/** 产地：按分类给合理城市池（手机数码在深圳、生鲜在产区，不再全国乱飞） */
+const ORIGIN_CITIES: Record<number, string[]> = {
+  1: ['广东深圳', '广东东莞'],
+  2: ['广东佛山', '浙江宁波', '安徽合肥'],
+  3: ['浙江杭州', '福建泉州', '广东广州'],
+  4: ['上海', '浙江杭州', '广东广州'],
+  5: ['山东烟台', '云南昆明', '内蒙古呼和浩特', '四川成都'],
+  6: ['浙江义乌', '江苏南通', '河北保定'],
+}
+
+/** 分类卖点词库：description 卖点段从这里拼，不同品类讲不同的卖点 */
+const SELLING_POINTS: Record<number, string[]> = {
+  1: ['新一代低功耗芯片，续航持久安心', '高清护眼屏，观感细腻通透', '快充加持，碎片时间即可回血'],
+  2: ['变频节能，静音运行不扰家', '大容量设计，一次满足全家所需', '一级能效，长期使用更省电'],
+  3: ['亲肤面料，上身柔软不闷汗', '版型剪裁利落，通勤休闲皆宜', '经典配色，怎么搭都不出错'],
+  4: ['温和配方，敏感肌也可安心使用', '质地清爽易推开，吸收不粘腻', '核心成分足量添加，效果看得见'],
+  5: ['产地直采，新鲜从源头开始', '配料表干净，给家人吃得放心', '锁鲜工艺直达，开袋即是好风味'],
+  6: ['加厚材质，结实耐用不易坏', '居家收纳好帮手，整齐不费劲', '简约设计，放在哪里都顺眼'],
+}
+
+/** 分类规格集：不同品类用不同规格维度（服饰是颜色/尺码，食品是口味/规格） */
+const SPEC_SETS: Record<number, { names: [string, string]; values: [string[], string[]] }> = {
+  1: { names: ['颜色', '版本'], values: [['曜石黑', '釉白', '远峰蓝', '薄暮金'], ['标准版', '高配版', '顶配版']] },
+  2: { names: ['颜色', '规格'], values: [['雅白', '太空灰'], ['基础款', '进阶款', '旗舰款']] },
+  3: { names: ['颜色', '尺码'], values: [['燕麦色', '藏青', '烟灰'], ['S', 'M', 'L', 'XL']] },
+  4: { names: ['香型', '净含量'], values: [['清茉莉', '白茶', '雪松'], ['30ml', '50ml']] },
+  5: { names: ['口味', '规格'], values: [['原味', '海盐味', '藤椒味'], ['袋装', '礼盒装']] },
+}
+// 家居日用：两条规格
+SPEC_SETS[6] = {
+  names: ['颜色', '规格'],
+  values: [['云朵白', '雾灰绿'], ['单只装', '两件套', '四件套']],
+}
+
+/** 分类附加参数：每个品类有自己合理的参数项（食品是保质期，数码是保修） */
+function extraParams(categoryId: number): { key: string, value: string }[] {
+  const pick = <T>(arr: T[]): T => Random.pick(arr)
+  switch (categoryId) {
+    case 1:
+    case 2:
+      return [{ key: '保修', value: pick(['12个月', '24个月', '36个月']) }]
+    case 3:
+      return [{ key: '面料', value: pick(['100%纯棉', '棉聚酯混纺', '聚酯纤维', '莱赛尔纤维']) }]
+    case 4:
+      return [{ key: '净含量', value: pick(['30ml', '50ml', '75ml', '100g']) }]
+    case 5:
+      return [{ key: '保质期', value: pick(['6个月', '9个月', '12个月', '18个月']) }]
+    default:
+      return [{ key: '材质', value: pick(['加厚PP', '不锈钢', '无纺布', '水洗棉']) }]
+  }
+}
+
+/** 描述文案：卖点段 + 规格段（引用真实 SKU 与价格档位）+ 保障段，替代随机乱句 */
+function buildDescription(title: string, categoryId: number, price: number, specNames: [string, string], specValues: string[]): string {
+  const brand = brandOf(title)
+  const [p1, p2, p3] = SELLING_POINTS[categoryId] ?? SELLING_POINTS[1]
+  const tier = price >= 1000 ? '旗舰品质' : price >= 200 ? '进阶之选' : '高性价比之选'
+  return [
+    `${p1}；${p2}；${p3}。`,
+    `${brand}出品，${tier}定位。提供${specNames[0]}：${specValues[0].join('/')}，${specNames[1]}：${specValues[1].join('/')}等多种组合，满足不同场景需求。`,
+    '支持七天无理由退换，全场包邮（偏远地区除外），赠运费险，售后无忧。',
+  ].join('\n')
+}
+
 interface PlaceholderOpts {
   from: string
   to: string
@@ -151,26 +222,29 @@ function buildCatalog(): Catalog {
     }
   }
 
-  // 详情：每个商品固定一套 SKU（颜色 × 版本）
-  const COLORS = ['曜石黑', '釉白', '远峰蓝', '薄暮金']
-  const VERSIONS = ['标准版', '高配版', '顶配版']
+  // 详情：SKU 规格维度按品类走（数码是颜色×版本，服饰是颜色×尺码……）
   const detailMap = new Map<number, ProductDetail>()
 
   for (const g of goods) {
+    const specSet = SPEC_SETS[g.categoryId] ?? SPEC_SETS[1]
+    const [nameA, nameB] = specSet.names
+    const [valuesA, valuesB] = specSet.values
+
     const skus: Sku[] = []
     let skuId = 0
-    for (const c of COLORS) {
-      for (const v of VERSIONS) {
+    for (const a of valuesA) {
+      for (const b of valuesB) {
         skuId++
         skus.push({
           id: skuId,
-          title: `${c} ${v}`,
+          title: `${a} ${b}`,
           price: Number((g.price + skuId * 50).toFixed(2)),
           stock: Random.integer(0, 999),
-          specs: { 颜色: c, 版本: v },
+          specs: { [nameA]: a, [nameB]: b },
         })
       }
     }
+
     const style = CAT_STYLE[g.categoryId] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }
     detailMap.set(g.id, {
       ...g,
@@ -179,14 +253,14 @@ function buildCatalog(): Catalog {
         svgPlaceholder(375, 375, { ...style, label: '细节' }),
         svgPlaceholder(375, 375, { ...style, label: '场景' }),
       ],
-      description: Random.cparagraph(2, 4),
-      specNames: ['颜色', '版本'],
+      description: buildDescription(g.title, g.categoryId, g.price, specSet.names, specSet.values),
+      specNames: [nameA, nameB],
       skus,
       params: [
-        { key: '品牌', value: Random.ctitle(2, 3) },
-        { key: '产地', value: Random.city() },
-        { key: '保修', value: `${Random.integer(12, 36)}个月` },
-        { key: '上架时间', value: Random.date('yyyy-MM-dd') },
+        { key: '品牌', value: brandOf(g.title) }, // 与标题一致，不再随机品牌
+        { key: '产地', value: Random.pick(ORIGIN_CITIES[g.categoryId] ?? ['浙江杭州']) },
+        ...extraParams(g.categoryId),
+        { key: '上架时间', value: g.createdAt.slice(0, 10) }, // 与 createdAt 字段互洽
       ],
     })
   }
