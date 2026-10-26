@@ -175,15 +175,17 @@ interface PlaceholderOpts {
 }
 
 // SVG 占位图：mockjs 的 dataImage 在 Nitro(Node ESM) 下依赖原生 canvas 会报错，
-// 自生成渐变 + 图标 + 纹理的 SVG data URL，零依赖、体积小、不依赖外部图床
-function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
+// 自生成渐变 + 图标 + 纹理的 SVG，零依赖、不依赖外部图床。
+// 返回裸 SVG 字符串（不是 data URL）——由 /img/[name] 路由以图片形式下发，
+// 这样浏览器能单独缓存、HTML 里只留一个短 URL
+export function renderSvg(w: number, h: number, opts: PlaceholderOpts): string {
   const { from, to, emoji, label = '', corner = '', ink = '#ffffff' } = opts
   const m = Math.min(w, h)
   const emojiSize = Math.round(m * (emoji && label ? 0.26 : 0.3))
   const labelSize = Math.max(13, Math.round(h * 0.07))
   const cornerSize = Math.max(10, Math.round(h * 0.045))
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
     + `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">`
     + `<stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/>`
     + `</linearGradient></defs>`
@@ -192,25 +194,38 @@ function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
     + `<circle cx="${w * 0.08}" cy="${h * 0.96}" r="${m * 0.26}" fill="#000000" opacity="0.1"/>`
     + `<circle cx="${w * 0.86}" cy="${h * 0.12}" r="${m * 0.2}" fill="#ffffff" opacity="0.06"/>`
     + (emoji
-      ? `<text x="50%" y="${label ? '44%' : '50%'}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
+      ? `<text x="50%" y="${label ? '44%' : '50%'}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="central">${esc(emoji)}</text>`
       : '')
     + (label
-      ? `<text x="50%" y="72%" font-size="${labelSize}" fill="${ink}" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${label}</text>`
+      ? `<text x="50%" y="72%" font-size="${labelSize}" fill="${ink}" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${esc(label)}</text>`
       : '')
     + (corner
-      ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="${ink}" opacity="0.4" text-anchor="end">${corner}</text>`
+      ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="${ink}" opacity="0.4" text-anchor="end">${esc(corner)}</text>`
       : '')
     + `</svg>`
-
-  return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
 }
 
-function mockGoodsImage(id: number, categoryId: number): string {
-  const style = CAT_STYLE[categoryId] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }
-  return svgPlaceholder(200, 200, {
-    ...style,
-    corner: String(id).padStart(3, '0'),
+/** XML 转义：标签/emoji 拼进 SVG 前必须处理，否则 </text><script> 就能注入 */
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case '&': return '&amp;'
+      case '<': return '&lt;'
+      case '>': return '&gt;'
+      case '"': return '&quot;'
+      default: return '&apos;'
+    }
   })
+}
+
+/** 分类视觉：暖亮浅调渐变 + 品类图标（与奶油白+橘橙主题协调） */
+export function styleOfCategory(categoryId: number) {
+  return CAT_STYLE[categoryId] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }
+}
+
+/** 商品图 URL：走 /img 路由，参数进 URL 才能按「内容不变」做长缓存 */
+function mockGoodsImage(id: number): string {
+  return `/img/goods/${id}.svg?size=200`
 }
 
 function mockPrice(): number {
@@ -238,7 +253,7 @@ function buildCatalog(): Catalog {
       goods.push({
         id,
         title,
-        image: mockGoodsImage(id, cat.id),
+        image: mockGoodsImage(id),
         price: mockPrice(),
         originPrice: Random.boolean() ? mockPrice() : undefined,
         sales: Random.integer(10, 99999),
@@ -291,13 +306,13 @@ function buildCatalog(): Catalog {
       }
     }
 
-    const style = CAT_STYLE[g.categoryId] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }
     detailMap.set(g.id, {
       ...g,
+      // 三张详情图共用 /img 路由，view 参数决定图上文字（main/detail/scene）
       images: [
-        svgPlaceholder(375, 375, { ...style, label: '主图' }),
-        svgPlaceholder(375, 375, { ...style, label: '细节' }),
-        svgPlaceholder(375, 375, { ...style, label: '场景' }),
+        `/img/goods/${g.id}.svg?size=375&view=main`,
+        `/img/goods/${g.id}.svg?size=375&view=detail`,
+        `/img/goods/${g.id}.svg?size=375&view=scene`,
       ],
       description: buildDescription(
         g.title,
@@ -336,18 +351,13 @@ export function getHomeData() {
   const banners: Banner[] = Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
     title: Random.ctitle(4, 6),
-    image: svgPlaceholder(750, 300, {
-      from: '#ffb35c',
-      to: '#ff7a2e', /* 暖橘渐变主视觉，白字仍清晰 */
-      emoji: '🛍️',
-      label: `拾光百货 · 好物焕新`,
-    }),
+    image: `/img/banner/${i + 1}.svg`,
   }))
 
   const navIcons: NavIcon[] = categories.map(c => ({
     id: c.id,
     name: c.name,
-    image: svgPlaceholder(60, 60, CAT_STYLE[c.id] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }),
+    image: `/img/nav/${c.id}.svg`,
   }))
 
   const recommend = [...goods].sort(() => Math.random() - 0.5).slice(0, 10)

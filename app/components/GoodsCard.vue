@@ -20,10 +20,11 @@ function formatSales(n: number): string {
 </script>
 
 <template>
-  <div
-    class="goods-card"
-    @click="navigateTo(`/product/${goods.id}`)"
-  >
+  <!-- 卡片本身不再是可点 div：跳转交给标题上的 <a>（NuxtLink），
+       再用 ::after 把链接热区铺满整张卡，视觉上仍是「点卡片任意处进入详情」。
+       这样做的好处：SSR 输出里有真实内链（爬虫可抓）、键盘 Tab 能聚焦、右键可新开标签；
+       收藏按钮是 <a> 的兄弟节点（<a> 里不允许嵌交互元素），靠 z-index 盖在热区之上 -->
+  <div class="goods-card">
     <div class="goods-media">
       <img
         class="goods-img"
@@ -44,7 +45,12 @@ function formatSales(n: number): string {
     </div>
     <div class="goods-info">
       <p class="goods-title">
-        {{ goods.title }}
+        <NuxtLink
+          class="card-link"
+          :to="`/product/${goods.id}`"
+        >
+          {{ goods.title }}
+        </NuxtLink>
       </p>
       <div class="goods-row">
         <span class="goods-price"><i>¥</i>{{ goods.price }}</span>
@@ -56,11 +62,32 @@ function formatSales(n: number): string {
 
 <style scoped lang="scss">
 .goods-card {
+  position: relative;
   border: 1px solid var(--c-line);
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
   cursor: pointer;
+
+  // 键盘聚焦时给整卡描边（链接本身是透明文字，焦点环画在卡上更清楚）
+  &:has(.card-link:focus-visible) {
+    outline: 2px solid var(--c-primary);
+    outline-offset: -2px;
+  }
+}
+
+// 链接只承载「语义 + 跳转」，视觉仍是标题本身；::after 把热区铺满整卡
+.card-link {
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
 }
 
 .goods-media {
@@ -80,6 +107,8 @@ function formatSales(n: number): string {
   bottom: 6px;
   display: flex;
   gap: 6px;
+  // 盖在链接热区（z-index:1）之上，否则点收藏会先触发跳转
+  z-index: 2;
 }
 
 .action-btn {
