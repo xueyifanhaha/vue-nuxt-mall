@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NavBar, Form, Field, Button, showToast } from 'vant'
-import { useApiError, request } from '~/composables/request'
+import { plainRequest } from '~/composables/request'
 import type { LoginResult } from '#shared/types'
 
 useSeoMeta({ title: '登录 - 拾光百货' })
@@ -24,7 +24,7 @@ async function onSubmit() {
   }
   submitting.value = true
   try {
-    const data = await request<LoginResult>('/api/login', {
+    const data = await plainRequest<LoginResult>('/api/login', {
       method: 'POST',
       body: { username: form.value.username, password: form.value.password },
     })
@@ -32,8 +32,8 @@ async function onSubmit() {
     showToast({ message: '登录成功', type: 'success' })
     navigateTo(redirect.value, { replace: true })
   }
-  catch (err) {
-    showToast(useApiError(err))
+  catch {
+    // 错误提示已由请求层统一 toast；登录的 401 是业务失败，不会触发踢回登录
   }
   finally {
     submitting.value = false

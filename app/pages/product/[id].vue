@@ -9,9 +9,8 @@ const id = Number(route.params.id)
 const { data: detail, error } = await useAsyncData(
   `product-${id}`,
   () => request<ProductDetail>(`/api/product/${id}`),
-  // 接通 payload 缓存：客户端导航回访同 id 直接命中，0 请求
-  // （默认 getCachedData 只在水合阶段读 payload；商品数据静态，适合常驻缓存）
-  { getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] },
+  // 缓存配方已封装进 request.ts（key 带商品 id，满足参数覆盖纪律）：同 id 回访 0 请求
+  { getCachedData },
 )
 
 // SEO：详情页用商品真实标题/描述（getter 响应式，数据到位后覆盖兜底）
