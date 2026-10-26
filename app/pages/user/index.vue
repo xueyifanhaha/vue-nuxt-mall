@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NavBar, Cell, CellGroup, Grid, GridItem, Icon, Button, showConfirmDialog, showToast } from 'vant'
+import { request } from '~/composables/request'
 
 useSeoMeta({ title: '我的 - 拾光百货' })
 
@@ -8,6 +9,25 @@ definePageMeta({ middleware: 'auth' })
 
 // auth middleware 已保证走到这里必然已登录，页面只渲染登录态
 const user = useUserStore()
+
+// 受保护接口：也是「401 → 静默续期 → 重放」的触发点。
+// server: false —— 会话信息是动态的、不需要 SSR 直出；放客户端才能走到续期链路
+// （SSR 阶段写不了 cookie，401 只能失败落空，反而会渲染出「会话无效」误导用户）
+const { data: session } = await useAsyncData(
+  'auth-me',
+  () => request<{ uid: number, exp: number, ttl: number }>('/api/auth/me'),
+  { server: false },
+)
+
+// 有效期显示到秒：access 只有 60 秒，续期一次就能看到数字变了
+const sessionText = computed(() => {
+  if (!session.value) {
+    return '—'
+  }
+  const d = new Date(session.value.exp * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+})
 
 const menuGrids = [
   { icon: 'star-o', label: '收藏' },
@@ -32,7 +52,7 @@ async function onLogout() {
   catch {
     return
   }
-  user.logout()
+  await user.logout()
   showToast('已退出登录')
   navigateTo('/', { replace: true })
 }
@@ -45,33 +65,86 @@ async function onLogout() {
     <!-- 用户信息头 -->
     <header class="profile-head">
       <div class="avatar">
-        <img v-if="user.userInfo?.avatar" :src="user.userInfo.avatar" alt="头像">
-        <span v-else class="avatar-fallback">{{ user.userInfo?.nickname?.slice(0, 1) }}</span>
+        <img
+          v-if="user.userInfo?.avatar"
+          :src="user.userInfo.avatar"
+          alt="头像"
+        >
+        <span
+          v-else
+          class="avatar-fallback"
+        >{{ user.userInfo?.nickname?.slice(0, 1) }}</span>
       </div>
       <div class="meta">
-        <p class="nickname">{{ user.userInfo?.nickname }}</p>
-        <p class="username">账号：{{ user.userInfo?.username }}</p>
+        <p class="nickname">
+          {{ user.userInfo?.nickname }}
+        </p>
+        <p class="username">
+          账号：{{ user.userInfo?.username }}
+        </p>
+        <p class="session">
+          会话有效至 {{ sessionText }}
+        </p>
       </div>
-      <Button size="small" plain round class="logout-btn" @click="onLogout">退出</Button>
+      <Button
+        size="small"
+        plain
+        round
+        class="logout-btn"
+        @click="onLogout"
+      >
+        退出
+      </Button>
     </header>
 
     <!-- 订单入口 -->
-    <CellGroup inset class="orders">
-      <Cell title="我的订单" is-link value="查看全部订单" @click="onPlaceholder('我的订单')" />
+    <CellGroup
+      inset
+      class="orders"
+    >
+      <Cell
+        title="我的订单"
+        is-link
+        value="查看全部订单"
+        @click="onPlaceholder('我的订单')"
+      />
       <div class="order-entries">
-        <div v-for="o in ['待付款', '待发货', '待收货', '评价']" :key="o" class="entry" @click="onPlaceholder(o)">
-          <Icon name="orders-o" size="22" />
+        <div
+          v-for="o in ['待付款', '待发货', '待收货', '评价']"
+          :key="o"
+          class="entry"
+          @click="onPlaceholder(o)"
+        >
+          <Icon
+            name="orders-o"
+            size="22"
+          />
           <span>{{ o }}</span>
         </div>
       </div>
     </CellGroup>
 
     <!-- 功能格子 -->
-    <CellGroup inset class="block">
-      <Grid :column-num="4" :border="false" class="funcs">
-        <GridItem v-for="m in menuGrids" :key="m.label" @click="onPlaceholder(m.label)">
+    <CellGroup
+      inset
+      class="block"
+    >
+      <Grid
+        :column-num="4"
+        :border="false"
+        class="funcs"
+      >
+        <GridItem
+          v-for="m in menuGrids"
+          :key="m.label"
+          @click="onPlaceholder(m.label)"
+        >
           <template #icon>
-            <Icon :name="m.icon" size="24" color="var(--c-primary)" />
+            <Icon
+              :name="m.icon"
+              size="24"
+              color="var(--c-primary)"
+            />
           </template>
           <template #text>
             <span class="grid-text">{{ m.label }}</span>
@@ -81,7 +154,10 @@ async function onLogout() {
     </CellGroup>
 
     <!-- 其它入口 -->
-    <CellGroup inset class="block">
+    <CellGroup
+      inset
+      class="block"
+    >
       <Cell
         v-for="c in menuCells"
         :key="c.label"
@@ -148,6 +224,14 @@ async function onLogout() {
       margin: 6px 0 0;
       font-size: 12px;
       opacity: 0.85;
+    }
+
+    /* 会话有效期：等宽数字，续期后秒数跳变能直接看出来 */
+    .session {
+      margin: 4px 0 0;
+      font-size: 11px;
+      opacity: 0.7;
+      font-variant-numeric: tabular-nums;
     }
   }
 
