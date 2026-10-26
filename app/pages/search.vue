@@ -204,6 +204,9 @@ function onClickWord(w: string) {
         @load="onLoad"
       >
         <div ref="scroller">
+          <!-- 首屏骨架：新搜索/切排序后结果区已清空、数据未回时占位 -->
+          <GoodsSkeleton v-if="loading && list.length === 0" :count="6" />
+
           <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
             <GridItem v-for="g in list" :key="g.id">
               <GoodsCard :goods="g" />

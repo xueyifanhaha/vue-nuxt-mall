@@ -138,6 +138,9 @@ function onClickTab(id: number) {
         error-text="加载失败，点击重试"
         @load="onLoad"
       >
+        <!-- 首屏骨架：切分类后 list 已清空、首屏数据未回时占位（尺寸与真实卡一致，防布局跳动） -->
+        <GoodsSkeleton v-if="loading && list.length === 0" :count="6" />
+
         <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
           <GridItem v-for="g in list" :key="g.id">
             <GoodsCard :goods="g" />

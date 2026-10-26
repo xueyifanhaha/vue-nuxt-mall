@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NavBar, Icon, Swipe, SwipeItem, Grid, GridItem, Loading, Empty } from 'vant'
+import { NavBar, Icon, Swipe, SwipeItem, Grid, GridItem, Empty } from 'vant'
 import type { HomeData } from '#shared/types'
 
 useSeoMeta({ title: '首页 - 拾光百货' })
@@ -21,10 +21,8 @@ function toSearch() {
       </template>
     </NavBar>
 
-    <!-- 加载中 / 出错 -->
-    <div v-if="status === 'pending'" class="state-box">
-      <Loading size="24" vertical>加载中...</Loading>
-    </div>
+    <!-- 加载中 / 出错（首屏由 SSR 直出真数据，pending 只出现在 refresh/重试） -->
+    <GoodsSkeleton v-if="status === 'pending'" :count="4" />
     <Empty v-else-if="error" description="加载失败，请刷新重试" />
 
     <template v-else-if="data">
@@ -56,12 +54,6 @@ function toSearch() {
 </template>
 
 <style scoped lang="scss">
-.state-box {
-  display: flex;
-  justify-content: center;
-  padding: 120px 0;
-}
-
 /* 轮播：卡片化，与页面留出呼吸感 */
 .banner {
   height: 150px;
