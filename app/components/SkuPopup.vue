@@ -32,12 +32,12 @@ function optionsOf(name: string): string[] {
 /** 命中的 SKU（所有规格都选过才非空） */
 const matchedSku = computed<Sku | null>(() => {
   const picked = Object.values(props.selected)
-  if (picked.some((v) => !v)) {
+  if (picked.some(v => !v)) {
     return null
   }
   return (
-    props.detail.skus.find((s) =>
-      props.detail.specNames.every((n) => s.specs[n] === props.selected[n]),
+    props.detail.skus.find(s =>
+      props.detail.specNames.every(n => s.specs[n] === props.selected[n]),
     ) ?? null
   )
 })
@@ -57,9 +57,18 @@ function onConfirm() {
 </script>
 
 <template>
-  <Popup v-model:show="show" position="bottom" round class="sku-popup">
+  <Popup
+    v-model:show="show"
+    position="bottom"
+    round
+    class="sku-popup"
+  >
     <div class="sku-head">
-      <img class="sku-img" :src="detail.image" :alt="detail.title" />
+      <img
+        class="sku-img"
+        :src="detail.image"
+        :alt="detail.title"
+      >
       <div class="sku-meta">
         <p class="sku-price">
           <i>¥</i>{{ matchedSku ? matchedSku.price : detail.price }}
@@ -71,11 +80,21 @@ function onConfirm() {
           已选：{{ detail.specNames.map(summaryOf).join('；') }}
         </p>
       </div>
-      <Icon name="cross" class="sku-close" @click="show = false" />
+      <Icon
+        name="cross"
+        class="sku-close"
+        @click="show = false"
+      />
     </div>
 
-    <div v-for="name in detail.specNames" :key="name" class="spec-group">
-      <h3 class="spec-name">{{ name }}</h3>
+    <div
+      v-for="name in detail.specNames"
+      :key="name"
+      class="spec-group"
+    >
+      <h3 class="spec-name">
+        {{ name }}
+      </h3>
       <div class="spec-options">
         <button
           v-for="v in optionsOf(name)"

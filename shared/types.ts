@@ -56,7 +56,7 @@ export interface ProductDetail extends GoodsItem {
   description: string
   specNames: string[]
   skus: Sku[]
-  params: { key: string; value: string }[]
+  params: { key: string, value: string }[]
 }
 
 export interface UserInfo {

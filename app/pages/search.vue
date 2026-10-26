@@ -20,8 +20,6 @@ const searched = ref(false) // 已执行过搜索（控制空结果 Empty）
 const seq = ref(0) // 请求序号：丢弃过期响应（防抖连续搜索的竞态守卫）
 const sort = ref<GoodsSort>('default') // 排序：切换时重置分页重新拉首屏
 
-const scroller = ref<HTMLElement | null>(null)
-
 // 拉取一页：手动首屏与 List 触底共用
 async function fetchPage(reset: boolean) {
   const kw = keyword.value.trim()
@@ -80,13 +78,15 @@ watch(sort, () => {
 
 // 发起新搜索：重置状态后手动拉第一页
 // （loading 先置 true 挡住 List 的自动 check，避免双请求）
-function doSearch(kw: string) {
+// 关键词统一从 keyword ref 读，不再收参数——避免两处状态不一致
+function doSearch() {
   list.value = []
   page.value = 1
   finished.value = false
   searched.value = false
   loading.value = true
-  scroller.value?.scrollTo({ top: 0 })
+  // 页面由 window 滚动（没有 overflow 容器），必须滚 window 而不是列表外层 div
+  window.scrollTo({ top: 0 })
   fetchPage(true)
 }
 
@@ -106,7 +106,7 @@ watch(keyword, (v) => {
     loading.value = false
     return
   }
-  timer = setTimeout(() => doSearch(kw), DEBOUNCE_MS)
+  timer = setTimeout(() => doSearch(), DEBOUNCE_MS)
 })
 
 onUnmounted(() => {
@@ -120,7 +120,7 @@ function onConfirm() {
   const kw = keyword.value.trim()
   if (kw) {
     saveHistory(kw)
-    doSearch(kw)
+    doSearch()
   }
 }
 
@@ -132,7 +132,7 @@ onMounted(() => {
   history.value = readHistory()
   // 热门词兜底：分类名（复用接口）
   request<Category[]>('/api/category').then((cats) => {
-    hotWords.value = cats.map((c) => c.name)
+    hotWords.value = cats.map(c => c.name)
   })
 })
 
@@ -146,7 +146,7 @@ function readHistory(): string[] {
 }
 
 function saveHistory(kw: string) {
-  const next = [kw, ...readHistory().filter((k) => k !== kw)].slice(0, HISTORY_MAX)
+  const next = [kw, ...readHistory().filter(k => k !== kw)].slice(0, HISTORY_MAX)
   history.value = next
   localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
 }
@@ -165,35 +165,67 @@ function onClickWord(w: string) {
 
 <template>
   <div class="search">
-    <NavBar title="搜索" left-arrow @click-left="$router.back()" />
+    <NavBar
+      title="搜索"
+      left-arrow
+      @click-left="$router.back()"
+    />
 
-    <Search v-model="keyword" class="search-box" placeholder="搜索商品" />
+    <Search
+      v-model="keyword"
+      class="search-box"
+      placeholder="搜索商品"
+      @search="onConfirm"
+    />
 
     <!-- 初始态：历史 + 热门词（历史仅客户端渲染） -->
     <template v-if="!keyword.trim()">
-      <section v-if="history.length" class="panel">
+      <section
+        v-if="history.length"
+        class="panel"
+      >
         <div class="panel-head">
           <span class="panel-title serif-title">搜索历史</span>
-          <Icon name="delete-o" size="16" @click="clearHistory" />
+          <Icon
+            name="delete-o"
+            size="16"
+            @click="clearHistory"
+          />
         </div>
         <div class="chips">
-          <span v-for="w in history" :key="w" class="chip" @click="onClickWord(w)">{{ w }}</span>
+          <span
+            v-for="w in history"
+            :key="w"
+            class="chip"
+            @click="onClickWord(w)"
+          >{{ w }}</span>
         </div>
       </section>
 
-      <section v-if="hotWords.length" class="panel">
+      <section
+        v-if="hotWords.length"
+        class="panel"
+      >
         <div class="panel-head">
           <span class="panel-title serif-title">热门搜索</span>
         </div>
         <div class="chips">
-          <span v-for="w in hotWords" :key="w" class="chip" @click="onClickWord(w)">{{ w }}</span>
+          <span
+            v-for="w in hotWords"
+            :key="w"
+            class="chip"
+            @click="onClickWord(w)"
+          >{{ w }}</span>
         </div>
       </section>
     </template>
 
     <!-- 结果区（List 观察页面滚动） -->
     <template v-else>
-      <GoodsFilterBar v-model="sort" class="result-filter" />
+      <GoodsFilterBar
+        v-model="sort"
+        class="result-filter"
+      />
 
       <List
         v-model:loading="loading"
@@ -203,12 +235,23 @@ function onClickWord(w: string) {
         error-text="加载失败，点击重试"
         @load="onLoad"
       >
-        <div ref="scroller">
+        <div>
           <!-- 首屏骨架：新搜索/切排序后结果区已清空、数据未回时占位 -->
-          <GoodsSkeleton v-if="loading && list.length === 0" :count="6" />
+          <GoodsSkeleton
+            v-if="loading && list.length === 0"
+            :count="6"
+          />
 
-          <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
-            <GridItem v-for="g in list" :key="g.id">
+          <Grid
+            class="goods-grid"
+            :column-num="2"
+            :border="false"
+            :gutter="8"
+          >
+            <GridItem
+              v-for="g in list"
+              :key="g.id"
+            >
               <GoodsCard :goods="g" />
             </GridItem>
           </Grid>

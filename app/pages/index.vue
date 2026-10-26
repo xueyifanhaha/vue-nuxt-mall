@@ -17,35 +17,78 @@ function toSearch() {
   <div class="home">
     <NavBar title="拾光百货">
       <template #right>
-        <Icon name="search" size="18" @click="toSearch" />
+        <Icon
+          name="search"
+          size="18"
+          @click="toSearch"
+        />
       </template>
     </NavBar>
 
     <!-- 加载中 / 出错（首屏由 SSR 直出真数据，pending 只出现在 refresh/重试） -->
-    <GoodsSkeleton v-if="status === 'pending'" :count="4" />
-    <Empty v-else-if="error" description="加载失败，请刷新重试" />
+    <GoodsSkeleton
+      v-if="status === 'pending'"
+      :count="4"
+    />
+    <Empty
+      v-else-if="error"
+      description="加载失败，请刷新重试"
+    />
 
     <template v-else-if="data">
       <!-- 轮播 -->
-      <Swipe class="banner" :autoplay="3000" indicator-color="#fff">
-        <SwipeItem v-for="b in data.banners" :key="b.id">
-          <img class="banner-img" :src="b.image" :alt="b.title" />
+      <Swipe
+        class="banner"
+        :autoplay="3000"
+        indicator-color="#fff"
+      >
+        <SwipeItem
+          v-for="b in data.banners"
+          :key="b.id"
+        >
+          <img
+            class="banner-img"
+            :src="b.image"
+            :alt="b.title"
+          >
         </SwipeItem>
       </Swipe>
 
       <!-- 金刚区：icon 插槽放图 + text 属性渲染文字（默认插槽会吞掉 text） -->
-      <Grid class="nav-grid" :column-num="6" :border="false">
-        <GridItem v-for="n in data.navIcons" :key="n.id" :text="n.name">
+      <Grid
+        class="nav-grid"
+        :column-num="6"
+        :border="false"
+      >
+        <GridItem
+          v-for="n in data.navIcons"
+          :key="n.id"
+          :text="n.name"
+        >
           <template #icon>
-            <img class="nav-icon" :src="n.image" :alt="n.name" />
+            <img
+              class="nav-icon"
+              :src="n.image"
+              :alt="n.name"
+            >
           </template>
         </GridItem>
       </Grid>
 
       <!-- 推荐商品（卡片实现统一收敛到 GoodsCard 组件） -->
-      <h2 class="section-title serif-title">推荐商品</h2>
-      <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
-        <GridItem v-for="g in data.recommend" :key="g.id">
+      <h2 class="section-title serif-title">
+        推荐商品
+      </h2>
+      <Grid
+        class="goods-grid"
+        :column-num="2"
+        :border="false"
+        :gutter="8"
+      >
+        <GridItem
+          v-for="g in data.recommend"
+          :key="g.id"
+        >
           <GoodsCard :goods="g" />
         </GridItem>
       </Grid>

@@ -35,7 +35,7 @@ export const useCartStore = defineStore('cart', () => {
 
   // ---------- actions（客户端事件回调里调用，useCookie 在客户端可安全使用） ----------
   function add(item: Omit<CartItem, 'qty' | 'checked'>, qty = 1) {
-    const exist = items.value.find((i) => i.skuId === item.skuId)
+    const exist = items.value.find(i => i.skuId === item.skuId)
     if (exist) {
       exist.qty += qty // 同 SKU 合并数量
     }
@@ -46,12 +46,12 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function remove(skuId: number) {
-    items.value = items.value.filter((i) => i.skuId !== skuId)
+    items.value = items.value.filter(i => i.skuId !== skuId)
     persist()
   }
 
   function setQty(skuId: number, qty: number) {
-    const target = items.value.find((i) => i.skuId === skuId)
+    const target = items.value.find(i => i.skuId === skuId)
     if (target) {
       target.qty = Math.max(1, qty)
       persist()
@@ -59,7 +59,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function toggleChecked(skuId: number) {
-    const target = items.value.find((i) => i.skuId === skuId)
+    const target = items.value.find(i => i.skuId === skuId)
     if (target) {
       target.checked = !target.checked
       persist()
@@ -67,7 +67,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function toggleAll(checked: boolean) {
-    items.value.forEach((i) => (i.checked = checked))
+    items.value.forEach(i => (i.checked = checked))
     persist()
   }
 
@@ -77,7 +77,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   // ---------- getters ----------
-  const checkedItems = computed(() => items.value.filter((i) => i.checked))
+  const checkedItems = computed(() => items.value.filter(i => i.checked))
   // 金额用 big.js 计算：JS 浮点下 19.9 * 3 = 59.699999999999996，直接累加会漂
   const totalPrice = computed(() =>
     Number(
@@ -89,7 +89,7 @@ export const useCartStore = defineStore('cart', () => {
   )
   const count = computed(() => items.value.reduce((sum, i) => sum + i.qty, 0))
   const allChecked = computed(() =>
-    items.value.length > 0 && items.value.every((i) => i.checked),
+    items.value.length > 0 && items.value.every(i => i.checked),
   )
 
   return {

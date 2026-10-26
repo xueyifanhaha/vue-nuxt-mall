@@ -45,9 +45,19 @@ function onClick(key: OptionKey) {
     >
       {{ opt.label }}
       <!-- 价格项带升降箭头 -->
-      <span v-if="opt.key === 'price'" class="arrows" :class="{ on: isPriceActive }">
-        <i class="up" :class="{ on: sort === 'price_asc' }">↑</i>
-        <i class="down" :class="{ on: sort === 'price_desc' }">↓</i>
+      <span
+        v-if="opt.key === 'price'"
+        class="arrows"
+        :class="{ on: isPriceActive }"
+      >
+        <i
+          class="up"
+          :class="{ on: sort === 'price_asc' }"
+        >↑</i>
+        <i
+          class="down"
+          :class="{ on: sort === 'price_desc' }"
+        >↓</i>
       </span>
     </button>
   </div>

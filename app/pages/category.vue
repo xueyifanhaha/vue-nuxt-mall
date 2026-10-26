@@ -109,7 +109,10 @@ function onClickTab(id: number) {
   <div class="category">
     <NavBar title="分类" />
 
-    <Empty v-if="error" description="加载失败，请刷新重试" />
+    <Empty
+      v-if="error"
+      description="加载失败，请刷新重试"
+    />
 
     <template v-else-if="cats">
       <!-- 顶部吸顶分类 Tab（自绘：Vant Tabs 的标题靠子组件 setup 注册，
@@ -127,7 +130,10 @@ function onClickTab(id: number) {
       </div>
 
       <!-- 排序筛选栏（吸顶叠在分类 Tab 下方） -->
-      <GoodsFilterBar v-model="sort" class="cat-filter" />
+      <GoodsFilterBar
+        v-model="sort"
+        class="cat-filter"
+      />
 
       <!-- 商品流：页面级滚动 + List 触底分页 -->
       <List
@@ -139,10 +145,21 @@ function onClickTab(id: number) {
         @load="onLoad"
       >
         <!-- 首屏骨架：切分类后 list 已清空、首屏数据未回时占位（尺寸与真实卡一致，防布局跳动） -->
-        <GoodsSkeleton v-if="loading && list.length === 0" :count="6" />
+        <GoodsSkeleton
+          v-if="loading && list.length === 0"
+          :count="6"
+        />
 
-        <Grid class="goods-grid" :column-num="2" :border="false" :gutter="8">
-          <GridItem v-for="g in list" :key="g.id">
+        <Grid
+          class="goods-grid"
+          :column-num="2"
+          :border="false"
+          :gutter="8"
+        >
+          <GridItem
+            v-for="g in list"
+            :key="g.id"
+          >
             <GoodsCard :goods="g" />
           </GridItem>
         </Grid>

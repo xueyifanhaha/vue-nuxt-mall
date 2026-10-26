@@ -9,7 +9,7 @@ export default defineEventHandler((event): PageResult<GoodsItem> => {
   const page = Math.max(1, Number(query.page) || 1)
   const pageSize = Math.min(30, Math.max(1, Number(query.pageSize) || 10))
 
-  const all = getCatalog().goods.filter((g) => g.categoryId === categoryId)
+  const all = getCatalog().goods.filter(g => g.categoryId === categoryId)
 
   // 排序（白名单校验）→ 再分页，顺序不能反
   const sorted = sortGoods(all, query.sort)

@@ -46,11 +46,18 @@ async function onSubmit() {
     <NavBar title="登录" />
 
     <div class="login-hero">
-      <div class="logo">拾</div>
-      <p class="slogan">拾光百货 · 好物焕新</p>
+      <div class="logo">
+        拾
+      </div>
+      <p class="slogan">
+        拾光百货 · 好物焕新
+      </p>
     </div>
 
-    <Form class="login-form" @submit="onSubmit">
+    <Form
+      class="login-form"
+      @submit="onSubmit"
+    >
       <Field
         v-model="form.username"
         name="username"
@@ -67,11 +74,19 @@ async function onSubmit() {
         :rules="[{ required: true, message: '请输入密码' }]"
       />
       <div class="submit-wrap">
-        <Button round block type="primary" native-type="submit" :loading="submitting">
+        <Button
+          round
+          block
+          type="primary"
+          native-type="submit"
+          :loading="submitting"
+        >
           登录
         </Button>
       </div>
-      <p class="hint">演示账号：demo / 123456</p>
+      <p class="hint">
+        演示账号：demo / 123456
+      </p>
     </Form>
   </div>
 </template>

@@ -26,10 +26,28 @@ function retry() {
       :description="is404 ? '你要找的页面不存在或已被移除' : '服务器出了点问题，请稍后重试'"
     >
       <div class="err-actions">
-        <Button round type="primary" class="btn" @click="goHome">回首页</Button>
-        <Button v-if="!is404" round plain type="primary" class="btn" @click="retry">重试</Button>
+        <Button
+          round
+          type="primary"
+          class="btn"
+          @click="goHome"
+        >
+          回首页
+        </Button>
+        <Button
+          v-if="!is404"
+          round
+          plain
+          type="primary"
+          class="btn"
+          @click="retry"
+        >
+          重试
+        </Button>
       </div>
-      <p class="code">{{ error.statusCode }}</p>
+      <p class="code">
+        {{ error.statusCode }}
+      </p>
     </Empty>
   </div>
 </template>

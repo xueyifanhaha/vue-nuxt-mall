@@ -24,9 +24,17 @@ function formatSales(n: number): string {
 </script>
 
 <template>
-  <div class="goods-card" @click="navigateTo(`/product/${goods.id}`)">
+  <div
+    class="goods-card"
+    @click="navigateTo(`/product/${goods.id}`)"
+  >
     <div class="goods-media">
-      <img class="goods-img" :src="goods.image" :alt="goods.title" loading="lazy" />
+      <img
+        class="goods-img"
+        :src="goods.image"
+        :alt="goods.title"
+        loading="lazy"
+      >
       <div class="goods-actions">
         <button
           class="action-btn"
@@ -39,7 +47,9 @@ function formatSales(n: number): string {
       </div>
     </div>
     <div class="goods-info">
-      <p class="goods-title">{{ goods.title }}</p>
+      <p class="goods-title">
+        {{ goods.title }}
+      </p>
       <div class="goods-row">
         <span class="goods-price"><i>¥</i>{{ goods.price }}</span>
         <span class="goods-sales">已售{{ formatSales(goods.sales) }}</span>

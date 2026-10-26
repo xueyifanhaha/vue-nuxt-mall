@@ -5,8 +5,15 @@ withDefaults(defineProps<{ count?: number }>(), { count: 6 })
 </script>
 
 <template>
-  <div class="goods-skeleton" aria-hidden="true">
-    <div v-for="i in count" :key="i" class="sk-card">
+  <div
+    class="goods-skeleton"
+    aria-hidden="true"
+  >
+    <div
+      v-for="i in count"
+      :key="i"
+      class="sk-card"
+    >
       <div class="sk-media" />
       <div class="sk-info">
         <div class="sk-title">

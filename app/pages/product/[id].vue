@@ -30,13 +30,13 @@ if (error.value || !detail.value) {
 // ---------- SKU 选择状态 ----------
 // specs 选中态：{ 颜色: '曜石黑', 版本: '标准版' }；空字符串 = 未选
 const selected = ref<Record<string, string>>(
-  Object.fromEntries(detail.value.specNames.map((n) => [n, ''])),
+  Object.fromEntries((detail.value?.specNames ?? []).map(n => [n, ''])),
 )
 const skuOpen = ref(false)
 
 // 商品卡跳转带 ?openSku=1 → 进入详情自动弹 SKU 层（无规格商品没有可选项，不弹）
 onMounted(() => {
-  if (route.query.openSku && detail.value.specNames.length) {
+  if (route.query.openSku && detail.value?.specNames.length) {
     skuOpen.value = true
   }
 })
@@ -45,11 +45,11 @@ onMounted(() => {
 const matchedSku = computed<Sku | null>(() => {
   const d = detail.value!
   const picked = Object.values(selected.value)
-  if (picked.some((v) => !v)) {
+  if (picked.some(v => !v)) {
     return null // 还有规格没选
   }
   return (
-    d.skus.find((s) => d.specNames.every((n) => s.specs[n] === selected.value[n])) ?? null
+    d.skus.find(s => d.specNames.every(n => s.specs[n] === selected.value[n])) ?? null
   )
 })
 
@@ -100,7 +100,7 @@ async function onAddCart() {
   skuOpen.value = false
   showToast('已加入购物车')
   // 选中态归位：否则下次点「加入购物车」因 allSpecsPicked 仍为真，静默复用上次 SKU 再加一件
-  selected.value = Object.fromEntries(detail.value!.specNames.map((n) => [n, '']))
+  selected.value = Object.fromEntries(detail.value!.specNames.map(n => [n, '']))
 }
 
 function onBuy() {
@@ -114,13 +114,28 @@ function formatSales(n: number): string {
 
 <template>
   <div class="product">
-    <NavBar title="商品详情" left-arrow @click-left="$router.back()" />
+    <NavBar
+      title="商品详情"
+      left-arrow
+      @click-left="$router.back()"
+    />
 
     <template v-if="detail">
       <!-- 图片轮播 -->
-      <Swipe class="gallery" :autoplay="3000" indicator-color="#fff">
-        <SwipeItem v-for="(img, i) in detail.images" :key="i">
-          <img class="gallery-img" :src="img" :alt="`${detail.title} 图${i + 1}`" />
+      <Swipe
+        class="gallery"
+        :autoplay="3000"
+        indicator-color="#fff"
+      >
+        <SwipeItem
+          v-for="(img, i) in detail.images"
+          :key="i"
+        >
+          <img
+            class="gallery-img"
+            :src="img"
+            :alt="`${detail.title} 图${i + 1}`"
+          >
         </SwipeItem>
       </Swipe>
 
@@ -128,14 +143,23 @@ function formatSales(n: number): string {
       <section class="info-card">
         <div class="price-row">
           <span class="price"><i>¥</i>{{ detail.price }}</span>
-          <span v-if="detail.originPrice" class="origin">¥{{ detail.originPrice }}</span>
+          <span
+            v-if="detail.originPrice"
+            class="origin"
+          >¥{{ detail.originPrice }}</span>
           <span class="sales">已售{{ formatSales(detail.sales) }}</span>
         </div>
-        <h1 class="title">{{ detail.title }}</h1>
+        <h1 class="title">
+          {{ detail.title }}
+        </h1>
       </section>
 
       <!-- 规格入口（未选全时展示提示；无规格商品不渲染） -->
-      <section v-if="detail.specNames.length" class="info-card spec-entry" @click="skuOpen = true">
+      <section
+        v-if="detail.specNames.length"
+        class="info-card spec-entry"
+        @click="skuOpen = true"
+      >
         <span class="spec-label">选择</span>
         <span class="spec-value">
           {{
@@ -144,14 +168,23 @@ function formatSales(n: number): string {
               : `${detail.specNames.join(' / ')}`
           }}
         </span>
-        <Icon name="arrow" class="spec-arrow" />
+        <Icon
+          name="arrow"
+          class="spec-arrow"
+        />
       </section>
 
       <!-- 商品参数 -->
       <section class="info-card">
-        <h2 class="section-title serif-title">商品参数</h2>
+        <h2 class="section-title serif-title">
+          商品参数
+        </h2>
         <ul class="params">
-          <li v-for="p in detail.params" :key="p.key" class="param-row">
+          <li
+            v-for="p in detail.params"
+            :key="p.key"
+            class="param-row"
+          >
             <span class="param-key">{{ p.key }}</span>
             <span class="param-value">{{ p.value }}</span>
           </li>
@@ -160,8 +193,12 @@ function formatSales(n: number): string {
 
       <!-- 商品描述 -->
       <section class="info-card">
-        <h2 class="section-title serif-title">商品详情</h2>
-        <p class="description">{{ detail.description }}</p>
+        <h2 class="section-title serif-title">
+          商品详情
+        </h2>
+        <p class="description">
+          {{ detail.description }}
+        </p>
       </section>
 
       <!-- SKU 弹层（规格选择 + 底部确认） -->
@@ -175,17 +212,35 @@ function formatSales(n: number): string {
 
       <!-- 底部操作栏 -->
       <div class="bottom-bar">
-        <button class="bar-fav" :class="{ active: isFav }" aria-label="收藏" @click="toggleFav">
+        <button
+          class="bar-fav"
+          :class="{ active: isFav }"
+          aria-label="收藏"
+          @click="toggleFav"
+        >
           <Icon :name="isFav ? 'like' : 'like-o'" />
           <span>{{ isFav ? '已收藏' : '收藏' }}</span>
         </button>
-        <button class="bar-btn cart" @click="onAddCart">加入购物车</button>
-        <button class="bar-btn buy" @click="onBuy">立即购买</button>
+        <button
+          class="bar-btn cart"
+          @click="onAddCart"
+        >
+          加入购物车
+        </button>
+        <button
+          class="bar-btn buy"
+          @click="onBuy"
+        >
+          立即购买
+        </button>
       </div>
       <div class="bottom-placeholder" />
     </template>
 
-    <Empty v-else-if="!error" description="加载中..." />
+    <Empty
+      v-else-if="!error"
+      description="加载中..."
+    />
   </div>
 </template>
 

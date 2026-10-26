@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NavBar, Checkbox, Button, Stepper, SwipeCell, Icon, Empty, showToast, showConfirmDialog } from 'vant'
+import { NavBar, Checkbox, Button, Stepper, SwipeCell, Empty, showToast, showConfirmDialog } from 'vant'
 
 useSeoMeta({ title: '购物车 - 拾光百货' })
 
@@ -26,7 +26,7 @@ async function onRemoveChecked() {
   }
   // checkedItems 取值即快照，remove 重建 items 数组不影响本次遍历
   const count = cart.checkedItems.length
-  cart.checkedItems.forEach((i) => cart.remove(i.skuId))
+  cart.checkedItems.forEach(i => cart.remove(i.skuId))
   showToast(`已删除 ${count} 件商品`)
 }
 
@@ -59,39 +59,85 @@ function formatPrice(n: number): string {
     <NavBar title="购物车" />
 
     <!-- 态一：未登录 → 引导登录（与 auth 守卫的 302 拦截对照：本页可浏览，操作时才拦） -->
-    <div v-if="!user.isLogged" class="state-login">
-      <Empty image="search" description="登录后同步你的购物车">
-        <Button round type="primary" class="login-btn" @click="goLogin">去登录</Button>
+    <div
+      v-if="!user.isLogged"
+      class="state-login"
+    >
+      <Empty
+        image="search"
+        description="登录后同步你的购物车"
+      >
+        <Button
+          round
+          type="primary"
+          class="login-btn"
+          @click="goLogin"
+        >
+          去登录
+        </Button>
       </Empty>
     </div>
 
     <!-- 态二：已登录但空车 -->
-    <Empty v-else-if="!cart.items.length" description="购物车还是空的">
-      <Button round type="primary" class="login-btn" @click="goShopping">去逛逛</Button>
+    <Empty
+      v-else-if="!cart.items.length"
+      description="购物车还是空的"
+    >
+      <Button
+        round
+        type="primary"
+        class="login-btn"
+        @click="goShopping"
+      >
+        去逛逛
+      </Button>
     </Empty>
 
     <!-- 态三：购物车列表 -->
     <template v-else>
       <div class="list-tools">
-        <button class="tool-btn" @click="onRemoveChecked">删除选中</button>
+        <button
+          class="tool-btn"
+          @click="onRemoveChecked"
+        >
+          删除选中
+        </button>
         <span class="tool-divider" />
-        <button class="tool-btn" @click="onClear">清空购物车</button>
+        <button
+          class="tool-btn"
+          @click="onClear"
+        >
+          清空购物车
+        </button>
       </div>
       <!-- 注意：行内 Checkbox 不能包 CheckboxGroup——组会接管选中态，没绑 v-model 时永远点不动 -->
       <div class="list">
-        <SwipeCell v-for="item in cart.items" :key="item.skuId">
+        <SwipeCell
+          v-for="item in cart.items"
+          :key="item.skuId"
+        >
           <div class="cart-item">
             <Checkbox
               :model-value="item.checked"
               checked-color="var(--c-primary)"
               @update:model-value="cart.toggleChecked(item.skuId)"
             />
-            <img class="thumb" :src="item.image" :alt="item.title" loading="lazy" />
+            <img
+              class="thumb"
+              :src="item.image"
+              :alt="item.title"
+              loading="lazy"
+            >
             <div class="info">
-              <p class="title">{{ item.title }}</p>
+              <p class="title">
+                {{ item.title }}
+              </p>
               <p class="specs">
                 <template v-if="Object.keys(item.specs).length">
-                  <span v-for="(v, k) in item.specs" :key="k">{{ k }}: {{ v }}</span>
+                  <span
+                    v-for="(v, k) in item.specs"
+                    :key="k"
+                  >{{ k }}: {{ v }}</span>
                 </template>
                 <span v-else>标准</span>
               </p>
@@ -109,7 +155,13 @@ function formatPrice(n: number): string {
             </div>
           </div>
           <template #right>
-            <Button square type="danger" text="删除" class="del-btn" @click="onDelete(item.skuId)" />
+            <Button
+              square
+              type="danger"
+              text="删除"
+              class="del-btn"
+              @click="onDelete(item.skuId)"
+            />
           </template>
         </SwipeCell>
       </div>
@@ -127,8 +179,15 @@ function formatPrice(n: number): string {
           <span>合计：</span>
           <strong class="total-price"><i>¥</i>{{ formatPrice(cart.totalPrice) }}</strong>
         </div>
-        <Button round type="primary" class="settle-btn" @click="onSettle">
-          去结算<template v-if="cart.checkedItems.length">({{ cart.checkedItems.length }})</template>
+        <Button
+          round
+          type="primary"
+          class="settle-btn"
+          @click="onSettle"
+        >
+          去结算<template v-if="cart.checkedItems.length">
+            ({{ cart.checkedItems.length }})
+          </template>
         </Button>
       </div>
     </template>

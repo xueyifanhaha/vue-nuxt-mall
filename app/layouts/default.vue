@@ -13,23 +13,58 @@ const cart = useCartStore()
 
 <template>
   <div class="layout">
-    <main class="page-body" :class="{ 'has-tabbar': showTabbar }">
+    <main
+      class="page-body"
+      :class="{ 'has-tabbar': showTabbar }"
+    >
       <slot />
     </main>
 
-    <Tabbar v-if="showTabbar" route safe-area-inset-bottom>
-      <TabbarItem replace to="/" icon="wap-home-o">首页</TabbarItem>
-      <TabbarItem replace to="/category" icon="apps-o">分类</TabbarItem>
-      <TabbarItem replace to="/cart">
+    <Tabbar
+      v-if="showTabbar"
+      route
+      safe-area-inset-bottom
+    >
+      <TabbarItem
+        replace
+        to="/"
+        icon="wap-home-o"
+      >
+        首页
+      </TabbarItem>
+      <TabbarItem
+        replace
+        to="/category"
+        icon="apps-o"
+      >
+        分类
+      </TabbarItem>
+      <TabbarItem
+        replace
+        to="/cart"
+      >
         <template #icon>
-          <Badge v-if="cart.count" :content="cart.count" max="99">
+          <Badge
+            v-if="cart.count"
+            :content="cart.count"
+            max="99"
+          >
             <Icon name="shopping-cart-o" />
           </Badge>
-          <Icon v-else name="shopping-cart-o" />
+          <Icon
+            v-else
+            name="shopping-cart-o"
+          />
         </template>
         购物车
       </TabbarItem>
-      <TabbarItem replace to="/user" icon="user-o">我的</TabbarItem>
+      <TabbarItem
+        replace
+        to="/user"
+        icon="user-o"
+      >
+        我的
+      </TabbarItem>
     </Tabbar>
   </div>
 </template>

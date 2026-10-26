@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Typecheck · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # CI 必须用 ci：严格按 package-lock.json 安装，不会悄悄升级依赖
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      # 跑构建：能抓出 lint / typecheck 抓不到的错（服务端 Node API 误用、产物打包失败）
+      - run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096

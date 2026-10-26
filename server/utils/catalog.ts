@@ -20,7 +20,7 @@ const CATEGORY_DEFS: Category[] = [
 ]
 
 // 分类视觉：暖亮浅调渐变 + 品类图标（与奶油白+橘橙主题协调）
-const CAT_STYLE: Record<number, { from: string; to: string; emoji: string; ink: string }> = {
+const CAT_STYLE: Record<number, { from: string, to: string, emoji: string, ink: string }> = {
   1: { from: '#ffe3c8', to: '#ffc08c', emoji: '📱', ink: '#9a5410' }, // 手机数码
   2: { from: '#ffeed4', to: '#ffd08e', emoji: '📺', ink: '#a06414' }, // 家用电器
   3: { from: '#ffe0d6', to: '#ffb3a0', emoji: '👜', ink: '#a34a30' }, // 服饰鞋包
@@ -29,10 +29,8 @@ const CAT_STYLE: Record<number, { from: string; to: string; emoji: string; ink: 
   6: { from: '#e3f0e4', to: '#bfe0c4', emoji: '🛋️', ink: '#4a7a52' }, // 家居日用
 }
 
-const GOODS_ADJ = ['旗舰', '臻选', '热销', '典藏', '轻奢', '爆款', '限量', '经典', '新品', '甄选']
-
 // 按分类生成真实感的商品名：品牌 + 品类词 + 款式
-const CAT_NAMING: Record<number, { brands: string[]; nouns: string[] }> = {
+const CAT_NAMING: Record<number, { brands: string[], nouns: string[] }> = {
   1: {
     brands: ['华为', '小米', 'OPPO', 'vivo', '荣耀', '一加', '漫步者', '安克'],
     nouns: ['旗舰手机', '无线耳机', '智能手表', '快充充电器', '蓝牙音箱', '平板电脑', '移动电源'],
@@ -94,7 +92,7 @@ const SELLING_POINTS: Record<number, string[]> = {
 }
 
 /** 分类规格集：不同品类用不同规格维度（服饰是颜色/尺码，食品是口味/规格） */
-const SPEC_SETS: Record<number, { names: [string, string]; values: [string[], string[]] }> = {
+const SPEC_SETS: Record<number, { names: [string, string], values: [string[], string[]] }> = {
   1: { names: ['颜色', '版本'], values: [['曜石黑', '釉白', '远峰蓝', '薄暮金'], ['标准版', '高配版', '顶配版']] },
   2: { names: ['颜色', '规格'], values: [['雅白', '太空灰'], ['基础款', '进阶款', '旗舰款']] },
   3: { names: ['颜色', '尺码'], values: [['燕麦色', '藏青', '烟灰'], ['S', 'M', 'L', 'XL']] },
@@ -105,6 +103,26 @@ const SPEC_SETS: Record<number, { names: [string, string]; values: [string[], st
 SPEC_SETS[6] = {
   names: ['颜色', '规格'],
   values: [['云朵白', '雾灰绿'], ['单只装', '两件套', '四件套']],
+}
+
+/** 取规格集：未配置的分类回落数码（1）。显式抛错代替可能的 undefined，让类型收窄 */
+function specSetOf(categoryId: number) {
+  const set = SPEC_SETS[categoryId] ?? SPEC_SETS[1]
+  if (!set) {
+    throw new Error(`未配置规格集：categoryId=${categoryId}`)
+  }
+  return set
+}
+
+const FALLBACK_POINTS: [string, string, string] = ['品质可靠', '用料扎实', '售后无忧']
+
+/** 取卖点：同样做兜底，保证解构出来一定是三个字符串 */
+function sellingPointsOf(categoryId: number): [string, string, string] {
+  const points = SELLING_POINTS[categoryId] ?? SELLING_POINTS[1]
+  if (!points || points.length < 3) {
+    return FALLBACK_POINTS
+  }
+  return [points[0] ?? FALLBACK_POINTS[0], points[1] ?? FALLBACK_POINTS[1], points[2] ?? FALLBACK_POINTS[2]]
 }
 
 /** 分类附加参数：每个品类有自己合理的参数项（食品是保质期，数码是保修） */
@@ -128,13 +146,17 @@ function extraParams(categoryId: number): { key: string, value: string }[] {
 /** 描述文案：卖点段 + 规格段（引用真实 SKU 与价格档位）+ 保障段，替代随机乱句 */
 function buildDescription(title: string, categoryId: number, price: number, specNames: string[], specValues: string[][]): string {
   const brand = brandOf(title)
-  const [p1, p2, p3] = SELLING_POINTS[categoryId] ?? SELLING_POINTS[1]
+  const [p1, p2, p3] = sellingPointsOf(categoryId)
   const tier = price >= 1000 ? '旗舰品质' : price >= 200 ? '进阶之选' : '高性价比之选'
-  const specDesc = specValues.length === 0
-    ? ''
-    : specValues.length > 1
-      ? `提供${specNames[0]}：${specValues[0].join('/')}，${specNames[1]}：${specValues[1].join('/')}等多种组合，满足不同场景需求。`
-      : `提供${specNames[0]}：${specValues[0].join('/')}。`
+  // 先解构再判空：noUncheckedIndexedAccess 下 specValues[0] 的类型含 undefined
+  const [firstName, secondName] = specNames
+  const [firstValues, secondValues] = specValues
+  const specDesc
+    = !firstValues
+      ? ''
+      : secondValues && secondName
+        ? `提供${firstName}：${firstValues.join('/')}，${secondName}：${secondValues.join('/')}等多种组合，满足不同场景需求。`
+        : `提供${firstName}：${firstValues.join('/')}。`
   return [
     `${p1}；${p2}；${p3}。`,
     specDesc ? `${brand}出品，${tier}定位。${specDesc}` : `${brand}出品，${tier}定位。`,
@@ -170,14 +192,14 @@ function svgPlaceholder(w: number, h: number, opts: PlaceholderOpts): string {
     + `<circle cx="${w * 0.08}" cy="${h * 0.96}" r="${m * 0.26}" fill="#000000" opacity="0.1"/>`
     + `<circle cx="${w * 0.86}" cy="${h * 0.12}" r="${m * 0.2}" fill="#ffffff" opacity="0.06"/>`
     + (emoji
-        ? `<text x="50%" y="${label ? '44%' : '50%'}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
-        : '')
+      ? `<text x="50%" y="${label ? '44%' : '50%'}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="central">${emoji}</text>`
+      : '')
     + (label
-        ? `<text x="50%" y="72%" font-size="${labelSize}" fill="${ink}" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${label}</text>`
-        : '')
+      ? `<text x="50%" y="72%" font-size="${labelSize}" fill="${ink}" opacity="0.9" text-anchor="middle" font-family="Georgia, 'Songti SC', SimSun, serif" letter-spacing="2">${label}</text>`
+      : '')
     + (corner
-        ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="${ink}" opacity="0.4" text-anchor="end">${corner}</text>`
-        : '')
+      ? `<text x="${w - 8}" y="${h - 10}" font-size="${cornerSize}" fill="${ink}" opacity="0.4" text-anchor="end">${corner}</text>`
+      : '')
     + `</svg>`
 
   return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`
@@ -218,7 +240,7 @@ function buildCatalog(): Catalog {
         title,
         image: mockGoodsImage(id, cat.id),
         price: mockPrice(),
-        originPrice: Random.bool() ? mockPrice() : undefined,
+        originPrice: Random.boolean() ? mockPrice() : undefined,
         sales: Random.integer(10, 99999),
         categoryId: cat.id,
         // 上架时间：按 id 确定性倒推（id 越大越晚上架），不用 Random 保证重启数据一致
@@ -231,7 +253,7 @@ function buildCatalog(): Catalog {
   const detailMap = new Map<number, ProductDetail>()
 
   for (const g of goods) {
-    const specSet = SPEC_SETS[g.categoryId] ?? SPEC_SETS[1]
+    const specSet = specSetOf(g.categoryId)
     const [nameA, nameB] = specSet.names
     const [valuesA, valuesB] = specSet.values
 
@@ -295,7 +317,7 @@ function buildCatalog(): Catalog {
   return {
     categories: CATEGORY_DEFS,
     goods,
-    goodsMap: new Map(goods.map((g) => [g.id, g])),
+    goodsMap: new Map(goods.map(g => [g.id, g])),
     detailMap,
   }
 }
@@ -319,7 +341,7 @@ export function getHomeData() {
     }),
   }))
 
-  const navIcons: NavIcon[] = categories.map((c) => ({
+  const navIcons: NavIcon[] = categories.map(c => ({
     id: c.id,
     name: c.name,
     image: svgPlaceholder(60, 60, CAT_STYLE[c.id] ?? { from: '#ffe9d4', to: '#ffc79c', emoji: '🛍️', ink: '#9a5410' }),

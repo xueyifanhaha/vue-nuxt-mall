@@ -7,7 +7,11 @@
     "dev": "nuxt dev --port 3001",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "nuxt typecheck",
+    "prepare": "husky"
   },
   "dependencies": {
     "@pinia/nuxt": "^1.0.3",
@@ -19,9 +23,20 @@
     "vant": "^4.10.2"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/big.js": "^7.0.0",
     "@types/mockjs": "^1.0.10",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "postcss-px-to-viewport": "^1.1.1",
-    "sass-embedded": "^1.106.1"
+    "sass-embedded": "^1.106.1",
+    "typescript": "^6.0.3",
+    "vue-tsc": "^3.3.13"
+  },
+  "lint-staged": {
+    "*.{js,mjs,ts,vue}": "eslint --fix"
   }
 }
