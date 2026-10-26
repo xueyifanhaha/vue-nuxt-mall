@@ -264,12 +264,15 @@ function buildCatalog(): Catalog {
     // 商品内各自从 1 编号会让不同商品撞号 → 加购 B 被合并进 A
     const skus: Sku[] = []
     let skuId = 0
+    // 测试用固定库存：商品 1 只有 5 件（验证数量限幅）、商品 2 售罄（验证缺货拦截）。
+    // 其余走随机；随机 0~999 撞到 0 的机会太小，边界根本测不到
+    const fixedStock = g.id === 1 ? 5 : g.id === 2 ? 0 : undefined
     if (noSpec) {
       skus.push({
         id: g.id * 100 + 1,
         title: '标准',
         price: g.price,
-        stock: Random.integer(0, 999),
+        stock: fixedStock ?? Random.integer(0, 999),
         specs: {},
       })
     }
@@ -281,7 +284,7 @@ function buildCatalog(): Catalog {
             id: g.id * 100 + skuId,
             title: `${a} ${b}`,
             price: Number((g.price + skuId * 50).toFixed(2)),
-            stock: Random.integer(0, 999),
+            stock: fixedStock ?? Random.integer(0, 999),
             specs: { [nameA]: a, [nameB]: b },
           })
         }

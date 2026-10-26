@@ -17,10 +17,15 @@ export const useCartStore = defineStore('cart', () => {
     return `cart_${user.userInfo?.id ?? 0}`
   }
 
-  /** 从当前用户的 cookie 恢复到内存态（store 初始化/SSR 与登录态变化时调用） */
+  /**
+   * 从当前用户的 cookie 恢复到内存态（store 初始化/SSR 与登录态变化时调用）。
+   * 兼容旧结构：stock 是后加的字段，历史 cookie 里没有，读出来是 undefined——
+   * 类型声明说有并不代表运行时真有，不兜底会让 Math.min(undefined, qty) 算出 NaN
+   */
   function hydrate() {
     const cookie = useCookie<CartItem[] | null>(cookieName(), { maxAge: MAX_AGE })
-    items.value = Array.isArray(cookie.value) ? cookie.value : []
+    const raw = Array.isArray(cookie.value) ? cookie.value : []
+    items.value = raw.map(i => ({ ...i, stock: i.stock ?? 999 }))
   }
 
   /** 内存态写回 cookie（所有变更 action 的统一出口） */
@@ -34,15 +39,28 @@ export const useCartStore = defineStore('cart', () => {
   hydrate() // 初始化：SSR 首帧就有数据
 
   // ---------- actions（客户端事件回调里调用，useCookie 在客户端可安全使用） ----------
-  function add(item: Omit<CartItem, 'qty' | 'checked'>, qty = 1) {
+  /**
+   * 加购：数量按库存快照限幅，返回实际入车数量与被限幅标记。
+   * 数据层不弹 toast——是否提示、怎么提示交给调用方，store 才能在别的场景（下单前校验）复用
+   */
+  function add(item: Omit<CartItem, 'qty' | 'checked'>, qty = 1): { qty: number, limited: boolean } {
     const exist = items.value.find(i => i.skuId === item.skuId)
+    const max = Math.max(0, item.stock)
     if (exist) {
-      exist.qty += qty // 同 SKU 合并数量
+      // 库存可能在上次加购后变过，以本次携带的快照为准
+      exist.stock = item.stock
+      const wanted = exist.qty + qty
+      exist.qty = Math.min(max, wanted)
+      persist()
+      return { qty: exist.qty, limited: wanted > max }
     }
-    else {
-      items.value.push({ ...item, qty, checked: true })
+    const real = Math.min(max, qty)
+    if (real <= 0) {
+      return { qty: 0, limited: true }
     }
+    items.value.push({ ...item, qty: real, checked: true })
     persist()
+    return { qty: real, limited: real < qty }
   }
 
   function remove(skuId: number) {
@@ -53,7 +71,8 @@ export const useCartStore = defineStore('cart', () => {
   function setQty(skuId: number, qty: number) {
     const target = items.value.find(i => i.skuId === skuId)
     if (target) {
-      target.qty = Math.max(1, qty)
+      // 上下限都收在 store：下限 1，上限取库存（售罄商品保留 1 件以便用户自己判断去留）
+      target.qty = Math.min(Math.max(1, qty), Math.max(1, target.stock))
       persist()
     }
   }

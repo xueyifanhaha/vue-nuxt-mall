@@ -27,9 +27,11 @@ function kickToLogin() {
   const user = useUserStore()
   void user.logout()
   const { fullPath } = useRoute()
+  // query 交给 navigateTo 序列化，不要自己 encodeURIComponent：
+  // 它内部会再编一次，双重编码后 /search?kw=手机 会变成 /search%3Fkw%3D... 跳 404
   navigateTo({
     path: '/login',
-    query: fullPath.startsWith('/login') ? {} : { redirect: encodeURIComponent(fullPath) },
+    query: fullPath.startsWith('/login') ? {} : { redirect: fullPath },
   })
 }
 

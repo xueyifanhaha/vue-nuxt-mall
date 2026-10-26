@@ -5,17 +5,13 @@ import type { GoodsItem } from '#shared/types'
 // 商品卡：分类/搜索/首页共用（图片 + 收藏/加购悬浮钮 + 标题 + 价格行）
 const props = defineProps<{ goods: GoodsItem }>()
 
-// 收藏是本地态，后续阶段抽成 Pinia favorites store
-const isFav = ref(false)
+// 收藏走全局 store：列表与详情页共享同一份状态，任一处切换另一处立刻同步
+const favorites = useFavoritesStore()
+const isFav = computed(() => favorites.has(props.goods.id))
 
 function toggleFav() {
-  isFav.value = !isFav.value
-  if (isFav.value) {
-    showToast(`已收藏「${props.goods.title}」`)
-  }
-  else {
-    showToast('已取消收藏')
-  }
+  const nowFav = favorites.toggle(props.goods.id)
+  showToast(nowFav ? `已收藏「${props.goods.title}」` : '已取消收藏')
 }
 
 function formatSales(n: number): string {

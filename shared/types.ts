@@ -80,4 +80,6 @@ export interface CartItem {
   specs: Record<string, string>
   qty: number
   checked: boolean
+  /** 加购时的库存快照：只用于前端限幅与提示，下单必须以服务端为准 */
+  stock: number
 }

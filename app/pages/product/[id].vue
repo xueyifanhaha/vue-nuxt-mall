@@ -55,18 +55,36 @@ const matchedSku = computed<Sku | null>(() => {
 
 const allSpecsPicked = computed(() => matchedSku.value !== null)
 
+/**
+ * 确定售罄：无规格商品直接看唯一 SKU；有规格的商品要等选完才知道，
+ * 未选时按钮保持可点（点开弹层才看得到哪个规格缺货）
+ */
+const soldOut = computed(() => {
+  const d = detail.value
+  if (!d) {
+    return false
+  }
+  if (d.specNames.length === 0) {
+    return (d.skus[0]?.stock ?? 0) <= 0
+  }
+  return Boolean(matchedSku.value && matchedSku.value.stock <= 0)
+})
+
 function pickSpec(name: string, value: string) {
   selected.value[name] = selected.value[name] === value ? '' : value
 }
 
 // ---------- 收藏 / 加购 ----------
-const isFav = ref(false)
+// 收藏态来自全局 store：与列表页商品卡共用同一份数据，不会出现「列表已收藏、详情还是未收藏」
+const favorites = useFavoritesStore()
+const isFav = computed(() => (detail.value ? favorites.has(detail.value.id) : false))
 
 function toggleFav() {
-  isFav.value = !isFav.value
-  if (isFav.value) {
-    showToast('已收藏')
+  if (!detail.value) {
+    return
   }
+  const nowFav = favorites.toggle(detail.value.id)
+  showToast(nowFav ? '已收藏' : '已取消收藏')
 }
 
 // 加购入口：未登录 → 引导登录带回跳；未选全规格 → 弹 SKU 层；选全 → 写入 cart store
@@ -89,21 +107,34 @@ async function onAddCart() {
     return
   }
   const sku = matchedSku.value!
-  cart.add({
+  if (sku.stock <= 0) {
+    showToast('该规格已售罄')
+    return
+  }
+  const { qty, limited } = cart.add({
     goodsId: id,
     skuId: sku.id,
     title: detail.value!.title,
     image: detail.value!.image, // 用列表小图：轮播大图是 375 SVG base64，会撑爆 4KB cookie
     price: sku.price,
     specs: { ...sku.specs },
+    stock: sku.stock,
   })
   skuOpen.value = false
-  showToast('已加入购物车')
+  showToast(limited ? `库存仅剩 ${qty} 件，已按上限加入` : '已加入购物车')
   // 选中态归位：否则下次点「加入购物车」因 allSpecsPicked 仍为真，静默复用上次 SKU 再加一件
   selected.value = Object.fromEntries(detail.value!.specNames.map(n => [n, '']))
 }
 
 function onBuy() {
+  if (!allSpecsPicked.value) {
+    skuOpen.value = true
+    return
+  }
+  if (matchedSku.value!.stock <= 0) {
+    showToast('该规格已售罄')
+    return
+  }
   showToast('立即购买（阶段 7 后接入订单流程）')
 }
 
@@ -223,15 +254,17 @@ function formatSales(n: number): string {
         </button>
         <button
           class="bar-btn cart"
+          :disabled="soldOut"
           @click="onAddCart"
         >
-          加入购物车
+          {{ soldOut ? '已售罄' : '加入购物车' }}
         </button>
         <button
           class="bar-btn buy"
+          :disabled="soldOut"
           @click="onBuy"
         >
-          立即购买
+          {{ soldOut ? '已售罄' : '立即购买' }}
         </button>
       </div>
       <div class="bottom-placeholder" />
@@ -424,6 +457,11 @@ function formatSales(n: number): string {
 
   &.buy {
     background: var(--c-primary);
+  }
+
+  &:disabled {
+    background: var(--c-muted);
+    cursor: not-allowed;
   }
 }
 

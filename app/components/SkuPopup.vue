@@ -47,8 +47,20 @@ function summaryOf(name: string): string {
   return props.selected[name] || `请选择${name}`
 }
 
+/** 命中组合是否可买：选了、而且有货 */
+const canBuy = computed(() => Boolean(matchedSku.value && matchedSku.value.stock > 0))
+
+/**
+ * 该规格值是否缺货：包含它的所有组合都没库存。
+ * 注意只是「置灰 + 划线」，不禁用点击——否则用户选中后没法取消重选
+ */
+function optionSoldOut(name: string, value: string): boolean {
+  const related = props.detail.skus.filter(s => s.specs[name] === value)
+  return related.length > 0 && related.every(s => s.stock <= 0)
+}
+
 function onConfirm() {
-  if (!matchedSku.value) {
+  if (!canBuy.value) {
     return
   }
   show.value = false
@@ -74,7 +86,15 @@ function onConfirm() {
           <i>¥</i>{{ matchedSku ? matchedSku.price : detail.price }}
         </p>
         <p class="sku-stock">
-          库存：{{ matchedSku ? matchedSku.stock : '请先选择规格' }}
+          <template v-if="!matchedSku">
+            库存：请先选择规格
+          </template>
+          <template v-else-if="matchedSku.stock <= 0">
+            库存：已售罄
+          </template>
+          <template v-else>
+            库存：{{ matchedSku.stock }} 件
+          </template>
         </p>
         <p class="sku-picked">
           已选：{{ detail.specNames.map(summaryOf).join('；') }}
@@ -100,7 +120,11 @@ function onConfirm() {
           v-for="v in optionsOf(name)"
           :key="v"
           class="spec-option"
-          :class="{ active: selected[name] === v }"
+          :class="{
+            'active': selected[name] === v,
+            'sold-out': optionSoldOut(name, v),
+          }"
+          :aria-disabled="optionSoldOut(name, v) || undefined"
           @click="emit('pick', name, v)"
         >
           {{ v }}
@@ -110,10 +134,10 @@ function onConfirm() {
 
     <button
       class="sku-confirm"
-      :disabled="!matchedSku"
+      :disabled="!canBuy"
       @click="onConfirm"
     >
-      {{ matchedSku ? '加入购物车' : '请选择完整规格' }}
+      {{ !matchedSku ? '请选择完整规格' : canBuy ? '加入购物车' : '该规格已售罄' }}
     </button>
   </Popup>
 </template>
@@ -208,6 +232,18 @@ function onConfirm() {
     background: rgba(255, 122, 46, 0.08);
     color: var(--c-primary);
     font-weight: 600;
+  }
+
+  // 缺货：置灰划线但仍可点（用来取消已选中的缺货项）
+  &.sold-out {
+    color: var(--c-muted);
+    text-decoration: line-through;
+
+    &.active {
+      border-color: var(--c-muted);
+      background: transparent;
+      color: var(--c-muted);
+    }
   }
 }
 

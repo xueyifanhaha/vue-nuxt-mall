@@ -141,13 +141,26 @@ function formatPrice(n: number): string {
                 </template>
                 <span v-else>标准</span>
               </p>
+              <!-- 库存快照只做提示：真正扣减必须由服务端在下单时校验 -->
+              <p
+                v-if="item.stock <= 0"
+                class="stock-tip sold-out"
+              >
+                该规格已售罄
+              </p>
+              <p
+                v-else-if="item.qty >= item.stock"
+                class="stock-tip"
+              >
+                仅剩 {{ item.stock }} 件
+              </p>
               <div class="row">
                 <span class="price"><i>¥</i>{{ formatPrice(item.price) }}</span>
                 <Stepper
                   :model-value="item.qty"
                   integer
                   :min="1"
-                  :max="99"
+                  :max="Math.max(1, item.stock)"
                   button-size="24px"
                   @update:model-value="(v: number) => cart.setQty(item.skuId, v)"
                 />
@@ -274,6 +287,16 @@ function formatPrice(n: number): string {
       margin: 6px 0 0;
       font-size: 12px;
       color: var(--c-muted);
+    }
+
+    .stock-tip {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--c-price);
+
+      &.sold-out {
+        color: var(--c-muted);
+      }
     }
 
     .row {
