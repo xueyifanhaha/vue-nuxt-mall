@@ -238,11 +238,13 @@ function buildCatalog(): Catalog {
     // 前两个商品无规格（详情页点加购直接加入，不弹规格选择），其余保持双维度
     const noSpec = g.id <= 2
 
+    // SKU id 全局唯一（商品 id ×100 + 商品内序号）：cart/订单都按 skuId 判同，
+    // 商品内各自从 1 编号会让不同商品撞号 → 加购 B 被合并进 A
     const skus: Sku[] = []
     let skuId = 0
     if (noSpec) {
       skus.push({
-        id: 1,
+        id: g.id * 100 + 1,
         title: '标准',
         price: g.price,
         stock: Random.integer(0, 999),
@@ -254,7 +256,7 @@ function buildCatalog(): Catalog {
         for (const b of valuesB) {
           skuId++
           skus.push({
-            id: skuId,
+            id: g.id * 100 + skuId,
             title: `${a} ${b}`,
             price: Number((g.price + skuId * 50).toFixed(2)),
             stock: Random.integer(0, 999),

@@ -43,6 +43,13 @@ html {
   background: var(--c-bg);
 }
 
+/* 全局盒模型基线：组件里散落的 box-sizing 可逐步删除 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
