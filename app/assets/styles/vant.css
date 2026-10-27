@@ -1,19 +1,22 @@
-/* Vant 按需样式聚合
+/* ⚠️ 此文件由 scripts/gen-vant-css.mjs 自动生成，请勿手动编辑
  *
- * 只引项目实际用到的 23 个组件（依赖已递归展开去重），合计 92KB，
- * 比全量 vant/lib/index.css（195KB）少约 53% —— 首屏 CSS 阻塞渲染，这项直接换首屏时间。
+ * 重新生成：npm run gen:vant
+ * 校验（CI 会跑，不一致即 fail）：node scripts/gen-vant-css.mjs --check
  *
- * 为什么聚成一个文件而不是在 nuxt.config 的 css 数组里逐条列：
- * nuxt.config 里写 node_modules 内的绝对路径时，Nuxt dev 会把同一文件注入成
+ * 内容来源：扫描 app/ 下所有 import { X } from 'vant'，解析每个组件的
+ * node_modules/vant/es/<组件>/style/index.mjs，再对 css 之间的 @import 递归展开去重。
+ * 当前 23 个组件 → 28 个 css 文件 / 92.0 KB
+ *（全量 vant/lib/index.css 是 195 KB）。
+ *
+ * 为什么聚成一个文件，而不是在 nuxt.config 的 css 数组里逐条列：
+ * nuxt.config 里写 node_modules 内的路径时，Nuxt dev 会把同一文件注入成
  * 「/@fs/D:/...」和「/D:/...」两个 URL，浏览器下载两遍（28 个文件 → 56 个请求）。
- * 项目内文件走 ~/ alias 只注入一次，所以这里统一聚合。
+ * 项目内文件走 ~/ alias 只注入一次，所以在这里聚合。
  *
  * 为什么不用 unplugin-vue-components + VantResolver 自动按需：
  * 那套在 Vite 8 的 dev SSR 下失效过，且 noExternal 把依赖塞进 worker 导致 OOM（10-25 回滚）。
- * 新增 Vant 组件时：看 node_modules/vant/es/<name>/style/index.mjs 里 import 了哪些 css，
- * 把缺的补在这里即可。
  *
- * @import 必须置顶（CSS 规范），且不能有条件分支。
+ * @import 必须置顶（CSS 规范），base.css 必须第一个（变量与 reset 是其余样式的前提）。
  */
 @import 'vant/es/style/base.css';
 @import 'vant/es/badge/index.css';
@@ -24,14 +27,17 @@
 @import 'vant/es/cell-group/index.css';
 @import 'vant/es/checkbox-group/index.css';
 @import 'vant/es/checkbox/index.css';
+@import 'vant/es/action-bar/index.css';
+@import 'vant/es/action-bar-button/index.css';
+@import 'vant/es/overlay/index.css';
+@import 'vant/es/popup/index.css';
+@import 'vant/es/dialog/index.css';
 @import 'vant/es/empty/index.css';
 @import 'vant/es/field/index.css';
 @import 'vant/es/grid/index.css';
 @import 'vant/es/grid-item/index.css';
 @import 'vant/es/list/index.css';
 @import 'vant/es/nav-bar/index.css';
-@import 'vant/es/overlay/index.css';
-@import 'vant/es/popup/index.css';
 @import 'vant/es/search/index.css';
 @import 'vant/es/stepper/index.css';
 @import 'vant/es/swipe/index.css';
@@ -39,7 +45,4 @@
 @import 'vant/es/swipe-item/index.css';
 @import 'vant/es/tabbar/index.css';
 @import 'vant/es/tabbar-item/index.css';
-@import 'vant/es/action-bar/index.css';
-@import 'vant/es/action-bar-button/index.css';
-@import 'vant/es/dialog/index.css';
 @import 'vant/es/toast/index.css';

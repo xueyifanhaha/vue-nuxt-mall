@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "nuxt typecheck",
+    "gen:vant": "node scripts/gen-vant-css.mjs",
+    "gen:vant:check": "node scripts/gen-vant-css.mjs --check",
     "prepare": "husky"
   },
   "dependencies": {

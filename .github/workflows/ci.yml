@@ -25,6 +25,9 @@ jobs:
       # CI 必须用 ci：严格按 package-lock.json 安装，不会悄悄升级依赖
       - run: npm ci
 
+      # 生成的样式清单必须与源码同步：加了 Vant 组件却忘了 npm run gen:vant 会在这里红
+      - run: npm run gen:vant:check
+
       - run: npm run lint
 
       - run: npm run typecheck
