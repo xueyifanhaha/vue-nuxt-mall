@@ -2,6 +2,10 @@
 // 生产环境请用 jose / jsonwebtoken，不要自己实现密码学
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
+// 生产环境缺密钥直接抛错：静默使用公开的兜底值等于任何人都能伪造合法签名
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET 未配置，拒绝在生产环境启动')
+}
 const SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-me'
 
 // access 有效期：演示默认 60 秒（真实项目 15 分钟）。
